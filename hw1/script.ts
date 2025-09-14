@@ -1,0 +1,244 @@
+// 最終工作版本的 TypeScript
+document.addEventListener('DOMContentLoaded', function(): void {
+    console.log('TypeScript 頁面載入完成，開始設定功能');
+    
+    // 設定技能進度條
+    function setupSkillBars(): void {
+        const skillBars: NodeListOf<HTMLElement> = document.querySelectorAll('.skill-progress');
+        console.log('找到技能進度條數量:', skillBars.length);
+        
+        const skillObserver: IntersectionObserver = new IntersectionObserver((entries: IntersectionObserverEntry[]) => {
+            entries.forEach((entry: IntersectionObserverEntry) => {
+                if (entry.isIntersecting) {
+                    const skillBar: HTMLElement = entry.target as HTMLElement;
+                    const targetWidth: string = skillBar.getAttribute('data-width') || '0%';
+                    console.log('進度條進入視窗，目標寬度:', targetWidth);
+                    
+                    setTimeout((): void => {
+                        skillBar.style.width = targetWidth;
+                        console.log('設定進度條寬度為:', targetWidth);
+                    }, 200);
+                    
+                    skillObserver.unobserve(skillBar);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        skillBars.forEach((bar: HTMLElement) => {
+            console.log('監聽進度條:', bar);
+            skillObserver.observe(bar);
+        });
+    }
+    
+    // 設定導航選單
+    function setupNavigation(): void {
+        const hamburger: HTMLElement | null = document.querySelector('.hamburger');
+        const navMenu: HTMLElement | null = document.querySelector('.nav-menu');
+        
+        if (hamburger && navMenu) {
+            hamburger.addEventListener('click', (): void => {
+                hamburger.classList.toggle('active');
+                navMenu.classList.toggle('active');
+                
+                // 動畫效果
+                const bars: NodeListOf<Element> = hamburger.querySelectorAll('.bar');
+                bars.forEach((bar: Element, index: number) => {
+                    const htmlBar: HTMLElement = bar as HTMLElement;
+                    if (hamburger.classList.contains('active')) {
+                        if (index === 0) htmlBar.style.transform = 'rotate(-45deg) translate(-5px, 6px)';
+                        if (index === 1) htmlBar.style.opacity = '0';
+                        if (index === 2) htmlBar.style.transform = 'rotate(45deg) translate(-5px, -6px)';
+                    } else {
+                        htmlBar.style.transform = 'none';
+                        htmlBar.style.opacity = '1';
+                    }
+                });
+            });
+        }
+        
+        // 導航連結點擊（現在只有首頁連結）
+        const navLinks: NodeListOf<Element> = document.querySelectorAll('.nav-link');
+        navLinks.forEach((link: Element) => {
+            link.addEventListener('click', (e: Event): void => {
+                e.preventDefault();
+                const targetId: string | null = link.getAttribute('href')?.substring(1) || null;
+                if (targetId === 'home') {
+                    // 滾動到首頁
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                }
+                
+                // 關閉行動版選單
+                if (hamburger && navMenu) {
+                    hamburger.classList.remove('active');
+                    navMenu.classList.remove('active');
+                    const bars: NodeListOf<Element> = hamburger.querySelectorAll('.bar');
+                    bars.forEach((bar: Element) => {
+                        const htmlBar: HTMLElement = bar as HTMLElement;
+                        htmlBar.style.transform = 'none';
+                        htmlBar.style.opacity = '1';
+                    });
+                }
+            });
+        });
+    }
+    
+    // 設定「了解更多」按鈕的動畫效果
+    function setupLearnMoreAnimation(): void {
+        const learnMoreBtn = document.querySelector('.btn-secondary') as HTMLElement;
+        const sections = ['about', 'skills', 'contact'];
+        console.log('尋找了解更多按鈕:', learnMoreBtn);
+        console.log('目標區塊:', sections);
+        
+        if (learnMoreBtn) {
+            learnMoreBtn.addEventListener('click', (e: Event): void => {
+                e.preventDefault();
+                console.log('了解更多按鈕被點擊，開始動畫');
+                
+                // 直接執行動畫（動畫函數會處理滾動）
+                console.log('開始執行漸進動畫');
+                animateSections(sections);
+            });
+        } else {
+            console.error('找不到了解更多按鈕！');
+        }
+    }
+    
+    // 改善的漸進動畫函數
+    function animateSections(sections: string[]): void {
+        console.log('開始執行改善的漸進動畫');
+        console.log('要顯示的區塊:', sections);
+        
+        // 先顯示所有區塊，但保持隱藏狀態
+        sections.forEach((sectionId: string): void => {
+            const section = document.getElementById(sectionId);
+            console.log('處理區塊:', sectionId, '元素:', section);
+            if (section) {
+                section.style.setProperty('display', 'block', 'important');
+                section.style.setProperty('opacity', '0', 'important');
+                section.style.setProperty('transform', 'translateY(60px)', 'important');
+                console.log('設定區塊', sectionId, '為顯示但透明');
+            } else {
+                console.error('找不到區塊:', sectionId);
+            }
+        });
+        
+        // 等待 DOM 更新後再滾動
+        setTimeout((): void => {
+            // 滾動到第一個區塊
+            const firstSectionId = sections[0];
+            if (firstSectionId) {
+                const firstSection = document.getElementById(firstSectionId);
+                if (firstSection) {
+                    const offsetTop = firstSection.offsetTop - 80;
+                    window.scrollTo({
+                        top: offsetTop,
+                        behavior: 'smooth'
+                    });
+                    console.log('滾動到第一個區塊，位置:', offsetTop);
+                }
+            }
+        }, 50); // 短暫延遲確保 DOM 更新
+        
+        // 依序顯示區塊，使用 CSS 類別而非直接設定樣式
+        sections.forEach((sectionId: string, index: number): void => {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                setTimeout((): void => {
+                    console.log(`顯示區塊: ${sectionId}`);
+                    // 移除 inline 樣式，讓 CSS 類別生效
+                    section.style.removeProperty('opacity');
+                    section.style.removeProperty('transform');
+                    section.classList.add('animate');
+                    console.log('添加 animate 類別到:', sectionId);
+                }, index * 600 + 500); // 每個區塊間隔600ms，第一個500ms後開始
+            }
+        });
+    }
+    
+    // 初始化區塊狀態（頁面載入時完全隱藏關於我、技能、聯絡我區塊）
+    function initializeSections(): void {
+        console.log('開始初始化區塊狀態 - 完全隱藏區塊');
+        const sections: string[] = ['about', 'skills', 'contact'];
+        sections.forEach((sectionId: string): void => {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                console.log(`完全隱藏區塊: ${sectionId}`);
+                // 初始狀態：完全隱藏區塊，不佔據任何空間
+                section.style.setProperty('display', 'none', 'important');
+                section.style.setProperty('opacity', '0', 'important');
+                section.style.setProperty('transform', 'translateY(60px)', 'important');
+                // 移除 transition 設定，讓 CSS 類別控制動畫
+            }
+        });
+    }
+    
+    // 設定滾動條顯示控制
+    function setupScrollbarVisibility(): void {
+        let scrollTimeout: ReturnType<typeof setTimeout>;
+        
+        window.addEventListener('scroll', (): void => {
+            // 添加滾動狀態類別
+            document.body.classList.add('scrolling');
+            
+            // 清除之前的計時器
+            clearTimeout(scrollTimeout);
+            
+            // 設定計時器，停止滾動後移除類別
+            scrollTimeout = setTimeout((): void => {
+                document.body.classList.remove('scrolling');
+            }, 1000); // 1秒後隱藏滾動條
+        });
+    }
+    
+    // 設定首頁元件動畫 - 改善浮現效果
+    function setupHeroAnimations(): void {
+        // 標題動畫 - 頁面載入後立即開始
+        setTimeout((): void => {
+            const title = document.querySelector('.hero-title') as HTMLElement;
+            if (title) {
+                title.classList.add('animate');
+                console.log('標題動畫開始');
+            }
+        }, 300); // 0.3秒後開始，更快響應
+        
+        // 描述文字動畫 - 標題動畫後開始
+        setTimeout((): void => {
+            const description = document.querySelector('.hero-description') as HTMLElement;
+            if (description) {
+                description.classList.add('animate');
+                console.log('描述文字動畫開始');
+            }
+        }, 600); // 0.6秒後開始
+        
+        // 按鈕動畫 - 描述文字動畫後開始
+        setTimeout((): void => {
+            const buttons = document.querySelector('.hero-buttons') as HTMLElement;
+            if (buttons) {
+                buttons.classList.add('animate');
+                console.log('按鈕動畫開始');
+            }
+        }, 900); // 0.9秒後開始
+        
+        // 個人資料卡片動畫 - 按鈕動畫後開始
+        setTimeout((): void => {
+            const heroImage = document.querySelector('.hero-image') as HTMLElement;
+            if (heroImage) {
+                heroImage.classList.add('animate');
+                console.log('個人資料卡片動畫開始');
+            }
+        }, 1200); // 1.2秒後開始
+    }
+    
+    // 執行設定
+    setupSkillBars();
+    setupNavigation();
+    setupLearnMoreAnimation();
+    initializeSections();
+    setupScrollbarVisibility();
+    setupHeroAnimations();
+    
+    console.log('TypeScript 所有功能設定完成');
+});
