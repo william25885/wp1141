@@ -1,0 +1,523 @@
+/* 遊戲主容器 */
+.App {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background:
+    #8b4513,
+    conic-gradient(
+      from 0deg at 25% 25%,
+      #a0522d 0deg,
+      #8b4513 90deg,
+      #654321 180deg,
+      #8b4513 270deg,
+      #a0522d 360deg
+    ),
+    conic-gradient(
+      from 45deg at 75% 75%,
+      #654321 0deg,
+      #8b4513 90deg,
+      #a0522d 180deg,
+      #8b4513 270deg,
+      #654321 360deg
+    ),
+    conic-gradient(
+      from 90deg at 50% 50%,
+      #8b4513 0deg,
+      #654321 90deg,
+      #8b4513 180deg,
+      #a0522d 270deg,
+      #8b4513 360deg
+    );
+  background-size:
+    100% 100%,
+    8px 8px,
+    12px 12px,
+    16px 16px;
+  font-family: 'Arial', sans-serif;
+}
+
+.game-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.game-area {
+  position: relative;
+  width: 100%;
+  height: 80%;
+  overflow: hidden;
+  background: linear-gradient(
+    to bottom,
+    #191970 0%,
+    #000080 30%,
+    #8b4513 70%,
+    #654321 100%
+  );
+}
+
+/* 地面 */
+.ground {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 20px;
+  background: #2f2f2f;
+  border-top: 2px solid #1a1a1a;
+}
+
+/* 泥土層 */
+.ground::before {
+  content: '';
+  position: absolute;
+  bottom: -30px;
+  left: 0;
+  width: 100%;
+  height: 30px;
+  background: linear-gradient(to bottom, #1a1a1a 0%, #0f0f0f 100%);
+  z-index: -1;
+}
+
+/* 泥土紋理 */
+.ground::after {
+  content: '';
+  position: absolute;
+  bottom: -30px;
+  left: 0;
+  width: 100%;
+  height: 30px;
+  background-image:
+    radial-gradient(
+      circle at 20% 50%,
+      rgba(139, 69, 19, 0.3) 2px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 60% 30%,
+      rgba(160, 82, 45, 0.2) 1px,
+      transparent 1px
+    ),
+    radial-gradient(
+      circle at 80% 70%,
+      rgba(139, 69, 19, 0.4) 1.5px,
+      transparent 1.5px
+    ),
+    radial-gradient(
+      circle at 40% 80%,
+      rgba(160, 82, 45, 0.3) 1px,
+      transparent 1px
+    ),
+    radial-gradient(
+      circle at 90% 20%,
+      rgba(139, 69, 19, 0.2) 1px,
+      transparent 1px
+    );
+  background-size:
+    50px 30px,
+    30px 20px,
+    40px 25px,
+    35px 20px,
+    25px 15px;
+  z-index: -1;
+}
+
+/* 月亮 */
+.moon {
+  position: absolute;
+  top: 30px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+  background: #f5f5dc;
+  border-radius: 50%;
+  box-shadow: 0 0 20px rgba(245, 245, 220, 0.8);
+  z-index: 1;
+}
+
+.moon::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 15px;
+  width: 15px;
+  height: 15px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+}
+
+/* 星星 */
+.star {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  animation: twinkle 2s infinite ease-in-out;
+}
+
+.star.small {
+  width: 2px;
+  height: 2px;
+}
+
+.star.medium {
+  width: 3px;
+  height: 3px;
+}
+
+.star.large {
+  width: 4px;
+  height: 4px;
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+/* 星星位置 */
+.star:nth-child(1) {
+  top: 20%;
+  left: 15%;
+  animation-delay: 0s;
+}
+.star:nth-child(2) {
+  top: 30%;
+  left: 25%;
+  animation-delay: 0.5s;
+}
+.star:nth-child(3) {
+  top: 15%;
+  left: 40%;
+  animation-delay: 1s;
+}
+.star:nth-child(4) {
+  top: 25%;
+  left: 60%;
+  animation-delay: 1.5s;
+}
+.star:nth-child(5) {
+  top: 35%;
+  left: 80%;
+  animation-delay: 2s;
+}
+.star:nth-child(6) {
+  top: 40%;
+  left: 10%;
+  animation-delay: 0.3s;
+}
+.star:nth-child(7) {
+  top: 50%;
+  left: 30%;
+  animation-delay: 0.8s;
+}
+.star:nth-child(8) {
+  top: 45%;
+  left: 50%;
+  animation-delay: 1.3s;
+}
+.star:nth-child(9) {
+  top: 55%;
+  left: 70%;
+  animation-delay: 1.8s;
+}
+.star:nth-child(10) {
+  top: 60%;
+  left: 90%;
+  animation-delay: 0.2s;
+}
+.star:nth-child(11) {
+  top: 10%;
+  left: 70%;
+  animation-delay: 0.7s;
+}
+.star:nth-child(12) {
+  top: 65%;
+  left: 20%;
+  animation-delay: 1.2s;
+}
+
+/* 恐龍樣式 */
+.dinosaur {
+  position: absolute;
+  font-size: 30px;
+  transition: all 0.1s ease;
+  background: transparent;
+  transform: scaleX(-1); /* 預設面向右方 */
+}
+
+.dinosaur.running {
+  animation: run 0.5s infinite linear;
+}
+
+.dinosaur.jumping {
+  animation: jump 0.6s ease-in-out;
+}
+
+.dinosaur.ducking {
+  transform: scaleY(0.7) scaleX(-1); /* 蹲下時面向右方，頭部向下 */
+  animation: ducking 0.3s ease-in-out;
+  /* 蹲下時保持貼地，不改變 bottom 位置 */
+}
+
+@keyframes ducking {
+  0% {
+    transform: scaleY(1) scaleX(-1);
+  }
+  100% {
+    transform: scaleY(0.7) scaleX(-1);
+  }
+}
+
+@keyframes run {
+  0%,
+  100% {
+    transform: translateY(0) scaleX(-1);
+  }
+  50% {
+    transform: translateY(-2px) scaleX(-1);
+  }
+}
+
+@keyframes jump {
+  0%,
+  100% {
+    transform: translateY(0) scaleX(-1);
+  }
+  50% {
+    transform: translateY(-100px) scaleX(-1);
+  }
+}
+
+/* 障礙物樣式 */
+.obstacle {
+  font-size: 20px;
+  user-select: none;
+}
+
+.obstacle.cactus {
+  color: #228b22;
+}
+
+.obstacle.pterodactyl {
+  color: #8b4513;
+}
+
+/* 大魔王召喚物 */
+.boss-summon {
+  font-size: 20px;
+  filter: drop-shadow(2px 2px 4px rgba(255, 0, 0, 0.5));
+  animation: bossGlow 1s infinite alternate;
+}
+
+@keyframes bossGlow {
+  from {
+    filter: drop-shadow(2px 2px 4px rgba(255, 0, 0, 0.5));
+  }
+  to {
+    filter: drop-shadow(2px 2px 8px rgba(255, 0, 0, 0.8));
+  }
+}
+
+/* 遊戲 UI */
+.game-ui {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  z-index: 100;
+}
+
+.start-screen,
+.game-over-screen,
+.victory-screen {
+  text-align: center;
+  padding: 2rem;
+}
+
+.start-screen h1,
+.game-over-screen h1,
+.victory-screen h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.start-screen p,
+.game-over-screen p,
+.victory-screen p {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.game-button {
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  font-size: 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  margin-top: 1rem;
+}
+
+.game-button:hover {
+  background: #45a049;
+}
+
+.game-button:active {
+  transform: translateY(2px);
+}
+
+/* 遊戲進行中的 UI */
+.game-ui:not(.start-screen):not(.game-over-screen):not(.victory-screen) {
+  background: transparent;
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  width: auto;
+  height: auto;
+  color: #ffffff;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.score-display {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 1.1rem;
+}
+
+.score,
+.high-score,
+.speed {
+  background: rgba(0, 0, 0, 0.6);
+  padding: 5px 10px;
+  border-radius: 5px;
+  border: 1px solid #444;
+}
+
+/* 大魔王計時器 */
+.boss-timer {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 0, 0, 0.8);
+  color: white;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  min-width: 200px;
+  z-index: 50;
+}
+
+.boss-timer h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.2rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff6b6b, #ffa500);
+  transition: width 0.1s ease;
+  border-radius: 5px;
+}
+
+/* 控制提示 */
+.controls-hint {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+}
+
+/* 音樂控制按鈕 */
+.music-toggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 100;
+}
+
+.music-toggle:hover {
+  background: rgba(0, 0, 0, 0.8);
+  transform: scale(1.1);
+}
+
+.music-toggle:active {
+  transform: scale(0.95);
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .start-screen h1,
+  .game-over-screen h1,
+  .victory-screen h1 {
+    font-size: 2rem;
+  }
+
+  .start-screen p,
+  .game-over-screen p,
+  .victory-screen p {
+    font-size: 1rem;
+  }
+
+  .game-button {
+    padding: 12px 24px;
+    font-size: 1rem;
+  }
+
+  .boss-timer {
+    top: 10px;
+    right: 10px;
+    padding: 10px;
+    min-width: 150px;
+  }
+}
