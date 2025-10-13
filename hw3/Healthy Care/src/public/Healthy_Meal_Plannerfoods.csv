@@ -1,0 +1,14 @@
+ingredient_id,name,category,calories_per_100g,protein_g,fat_g,carbs_g,fiber_g,sugar_g,sodium_mg,glycemic_index,cost_per_100g_usd,diet_tags,allergens,default_unit,serving_size_g
+1001,Chicken Breast,protein,165,31.0,3.6,0.0,0.0,0.0,74,0,0.85,"high_protein,gluten_free",,g,45
+1002,Tofu (Firm),protein,76,8.0,4.8,2.0,0.3,0.3,7,15,0.45,"vegan,vegetarian,gluten_free",soy,g,161
+1003,Salmon,protein,208,20.0,13.0,0.0,0.0,0.0,59,0,1.2,"pescatarian,gluten_free,omega3",fish,g,141
+1004,Egg,protein,155,13.0,11.0,1.1,0.0,1.1,124,0,0.3,"vegetarian_friendly,gluten_free",egg,g,104
+1005,Quinoa,grain,120,4.4,1.9,21.0,2.8,0.9,7,53,0.6,"gluten_free,whole_grain",,g,103
+1006,Brown Rice,grain,123,2.7,1.0,25.6,1.8,0.4,4,55,0.35,whole_grain,,g,175
+1007,Oats,grain,389,16.9,6.9,66.0,10.6,0.0,2,55,0.4,whole_grain,gluten,g,44
+1008,Sweet Potato,carb,86,1.6,0.1,20.0,3.0,4.2,55,56,0.25,gluten_free,,g,148
+1009,Broccoli,vegetable,55,3.7,0.6,11.0,3.8,2.2,33,10,0.3,"gluten_free,low_calorie",,g,64
+1010,Spinach,vegetable,23,2.9,0.4,3.6,2.2,0.4,79,0,0.28,"gluten_free,iron_rich",,g,46
+1011,Kale,vegetable,49,4.3,0.9,9.0,3.6,2.3,38,0,0.35,"gluten_free,vitamin_k",,g,119
+1012,Avocado,fat,160,2.0,14.7,8.5,6.7,0.7,7,10,0.9,"gluten_free,healthy_fat",,g,195
+1013,Egggyygy,fat,160,2.0,14.7,8.5,6.7,0.7,7,10,0.9,"gluten_free,healthy_fat",,g,195
