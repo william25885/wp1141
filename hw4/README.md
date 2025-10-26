@@ -88,6 +88,8 @@ npm install
 #### 方式一：直接編輯現有檔案
 直接編輯 `backend/.env` 和 `frontend/.env` 檔案，將範例值替換為您的實際 API 金鑰。
 
+**重要**：修改環境變數後，需要重新啟動開發伺服器才能生效。
+
 #### 方式二：使用範例檔案
 如果您偏好使用範例檔案，可以複製 `.env.sample` 檔案：
 
@@ -102,6 +104,8 @@ cd frontend
 cp .env.sample .env
 # 然後編輯 .env 檔案填入實際值
 ```
+
+**注意**：修改環境變數後，請重新啟動前端和後端開發伺服器。
 
 #### 後端環境變數
 在 `backend/.env` 檔案中設定以下環境變數：
@@ -138,7 +142,7 @@ NODE_ENV=development
 VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
 
 # 後端 API 基礎網址
-VITE_API_BASE_URL=http://localhost:3001
+VITE_API_BASE_URL=http://localhost:3001/api
 ```
 
 ### 4. Google Maps API 設定
@@ -146,12 +150,16 @@ VITE_API_BASE_URL=http://localhost:3001
 1. 前往 [Google Cloud Console](https://console.cloud.google.com/)
 2. 建立新專案或選擇現有專案
 3. 啟用以下 API：
-   - Maps JavaScript API
-   - Places API
-   - Geocoding API
+   - **Maps JavaScript API**（用於地圖顯示）
+   - **Places API**（用於地點搜尋）
+   - **Geocoding API**（用於地址轉經緯度）
 4. 建立 API 金鑰
-5. 將 API 金鑰設定到環境變數中
-6. 在前端 `index.html` 中載入 Google Maps JavaScript API
+5. 將 API 金鑰設定到環境變數中：
+   - 後端：`GOOGLE_PLACES_API_KEY`
+   - 前端：`VITE_GOOGLE_MAPS_API_KEY`
+6. 在前端 `index.html` 中載入 Google Maps JavaScript API（已包含 `places` 庫）
+
+**注意**：本專案使用傳統的 Google Maps Marker，確保在所有環境下都能正常運作。
 
 ### 5. 資料庫初始化
 ```bash
