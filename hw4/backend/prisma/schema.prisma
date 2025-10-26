@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// 使用者模型
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 關聯
+  favoriteLists FavoriteList[]
+
+  @@map("users")
+}
+
+// 收藏清單模型 (自定義資源)
+model FavoriteList {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 關聯
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items FavoriteItem[]
+
+  @@map("favorite_lists")
+}
+
+// 收藏項目模型 (自定義資源)
+model FavoriteItem {
+  id          String   @id @default(cuid())
+  listId      String
+  placeId     String   // Google Place ID
+  placeName   String
+  rating      Float?
+  reviewCount Int?
+  phone       String?
+  address     String?
+  distance    Float?   // 距離 (公里)
+  createdAt   DateTime @default(now())
+
+  // 關聯
+  list FavoriteList @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  @@map("favorite_items")
+}
+
+// 咖啡廳快取模型
+model CoffeeShop {
+  id            String   @id @default(cuid())
+  placeId       String   @unique // Google Place ID
+  name          String
+  rating        Float?
+  reviewCount   Int?
+  phone         String?
+  address       String?
+  lat           Float
+  lng           Float
+  openingHours  String?  // JSON 字串儲存營業時間
+  updatedAt     DateTime @updatedAt
+
+  @@map("coffee_shops")
+}
