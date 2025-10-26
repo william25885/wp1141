@@ -103,14 +103,14 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
       anchor: new window.google.maps.Point(12, 12)
     };
 
-    // 建立當前位置標記
+    // 建立當前位置標記 - 使用傳統的 Marker
     currentLocationMarkerRef.current = new window.google.maps.Marker({
       position: { lat: location.lat, lng: location.lng },
       map: mapInstanceRef.current,
       title: '我的位置',
       icon: currentLocationIcon,
       animation: window.google.maps.Animation.BOUNCE,
-      zIndex: 1000 // 確保當前位置標記在最上層
+      zIndex: 1000
     });
 
     // 建立當前位置資訊視窗
@@ -154,6 +154,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
           anchor: new window.google.maps.Point(16, 16)
         };
 
+        // 建立咖啡廳標記 - 使用傳統的 Marker
         const marker = new window.google.maps.Marker({
           position: { lat: shop.lat, lng: shop.lng },
           map: mapInstanceRef.current,
