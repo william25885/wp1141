@@ -2,4 +2,12 @@ node_modules
 # Environment variables are now included in version control
 # .env
 
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+dev.db
+prisma/dev.db
+prisma/prisma/dev.db
+
 /src/generated/prisma
