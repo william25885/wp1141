@@ -85,37 +85,59 @@ npm install
 
 ### 3. 環境變數設定
 
-#### 後端環境變數
-複製 `backend/.env.sample` 為 `backend/.env` 並填入實際值：
+#### 方式一：直接編輯現有檔案
+直接編輯 `backend/.env` 和 `frontend/.env` 檔案，將範例值替換為您的實際 API 金鑰。
+
+#### 方式二：使用範例檔案
+如果您偏好使用範例檔案，可以複製 `.env.sample` 檔案：
 
 ```bash
+# 後端
 cd backend
 cp .env.sample .env
+# 然後編輯 .env 檔案填入實際值
+
+# 前端
+cd frontend
+cp .env.sample .env
+# 然後編輯 .env 檔案填入實際值
 ```
 
+#### 後端環境變數
 在 `backend/.env` 檔案中設定以下環境變數：
 
 ```env
+# 伺服器設定
 PORT=3001
+
+# 資料庫設定
 DATABASE_URL="file:./prisma/dev.db"
-JWT_SECRET=your_jwt_secret_here
-GOOGLE_PLACES_API_KEY=your_google_places_api_key
+
+# JWT 認證密鑰（請使用強密鑰，建議至少 32 個字符）
+JWT_SECRET=your_jwt_secret_key_here
+
+# Google Places API 金鑰
+# 請前往 https://console.cloud.google.com/ 建立 API 金鑰
+# 需要啟用：Maps JavaScript API, Places API, Geocoding API
+GOOGLE_PLACES_API_KEY=your_google_places_api_key_here
+
+# CORS 設定（前端網址）
 CORS_ORIGIN=http://localhost:5173
+
+# 環境設定
 NODE_ENV=development
 ```
 
 #### 前端環境變數
-複製 `frontend/env.sample` 為 `frontend/.env.local` 並填入實際值：
-
-```bash
-cd frontend
-cp env.sample .env.local
-```
-
-在 `frontend/.env.local` 檔案中設定以下環境變數：
+在 `frontend/.env` 檔案中設定以下環境變數：
 
 ```env
-VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+# Google Maps JavaScript API 金鑰
+# 請前往 https://console.cloud.google.com/ 建立 API 金鑰
+# 需要啟用：Maps JavaScript API, Places API, Geocoding API
+VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
+
+# 後端 API 基礎網址
 VITE_API_BASE_URL=http://localhost:3001
 ```
 
