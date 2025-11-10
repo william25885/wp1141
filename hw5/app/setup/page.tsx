@@ -11,8 +11,12 @@ export default async function SetupPage({ searchParams }: Props) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) redirect("/login");
 
+  // 使用 session 中的用戶 ID（已在 session callback 中設置）
+  const userId = (session.user as any).id;
+  if (!userId) redirect("/login");
+
   const me = await prisma.user.findUnique({
-    where: { email: session.user.email },
+    where: { id: userId },
     select: { userId: true },
   });
 

@@ -19,10 +19,17 @@ export async function POST(req: Request) {
     );
   }
 
+  // 使用 session 中的用戶 ID（已在 session callback 中設置）
+  const userId = (session.user as any).id;
+  if (!userId) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
   const me = await prisma.user.findUnique({
-    where: { email: session.user.email },
+    where: { id: userId },
     select: { id: true, userId: true },
   });
+  
   if (!me?.userId) {
     return NextResponse.json(
       { error: "Please finish setup" },

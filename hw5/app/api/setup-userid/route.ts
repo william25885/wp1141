@@ -35,8 +35,14 @@ export async function POST(req: Request) {
   }
 
 
+  // 使用 session 中的用戶 ID（已在 session callback 中設置）
+  const userId = (session.user as any).id;
+  if (!userId) {
+    return NextResponse.redirect(new URL("/login", req.url));
+  }
+
   await prisma.user.update({
-    where: { email: session.user.email! },
+    where: { id: userId },
     data: { userId },
   });
 

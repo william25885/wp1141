@@ -15,14 +15,13 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const me = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { id: true },
-  });
-
-  if (!me) {
+  // 使用 session 中的用戶 ID（已在 session callback 中設置）
+  const userId = (session.user as any).id;
+  if (!userId) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
+
+  const me = { id: userId };
 
 
   const existing = await prisma.like.findUnique({
