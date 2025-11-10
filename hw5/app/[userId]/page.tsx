@@ -40,7 +40,7 @@ export default async function ProfilePage({ params }: PageProps) {
               <div className="relative">
                 <img
                   src={user.image ?? "/default-avatar.png"}
-                  alt={user.userId}
+                  alt={user.userId ?? "User"}
                   className="w-16 h-16 rounded-2xl object-cover bg-slate-800"
                 />
                 <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-400 border-2 border-slate-900" />
