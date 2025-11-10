@@ -1,0 +1,42 @@
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
+import { prisma } from "@/lib/prisma";
+
+export async function POST(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { content, replyToId } = await req.json();
+  const text = String(content || "").trim();
+
+  if (!text) {
+    return NextResponse.json(
+      { error: "Content is required" },
+      { status: 400 },
+    );
+  }
+
+  const me = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    select: { id: true, userId: true },
+  });
+  if (!me?.userId) {
+    return NextResponse.json(
+      { error: "Please finish setup" },
+      { status: 400 },
+    );
+  }
+
+  const post = await prisma.post.create({
+    data: {
+      authorId: me.id,
+      content: text,
+      replyToId: replyToId || null,
+    },
+  });
+
+  return NextResponse.json({ post });
+}
