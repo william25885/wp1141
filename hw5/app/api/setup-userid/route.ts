@@ -36,13 +36,13 @@ export async function POST(req: Request) {
 
 
   // 使用 session 中的用戶 ID（已在 session callback 中設置）
-  const userId = (session.user as any).id;
-  if (!userId) {
+  const userDbId = (session.user as any).id;
+  if (!userDbId) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
   await prisma.user.update({
-    where: { id: userId },
+    where: { id: userDbId },
     data: { userId },
   });
 
