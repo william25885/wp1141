@@ -98,7 +98,7 @@ export default async function ProfilePage({ params }: PageProps) {
               </div>
             ) : (
               <ul className="divide-y divide-slate-900/90">
-                {user.posts.map((post) => (
+                {user.posts.map((post: { id: string; content: string; createdAt: Date }) => (
                   <li
                     key={post.id}
                     className="px-6 py-4 hover:bg-slate-900/85 transition-colors"
