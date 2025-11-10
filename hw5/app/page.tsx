@@ -102,7 +102,14 @@ export default async function HomePage() {
                 </div>
               )}
 
-              {posts.map((post) => (
+              {posts.map((post: {
+                id: string;
+                content: string;
+                createdAt: Date;
+                author: { userId: string | null; name: string | null; image: string | null };
+                likes: { id: string }[];
+                _count: { likes: number; reposts: number; replies: number };
+              }) => (
                 <article
                   key={post.id}
                   className="px-5 py-4 border-b border-slate-900/80 hover:bg-slate-900/70 transition"
