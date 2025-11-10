@@ -92,11 +92,45 @@
 
 環境變數設定
 
-在專案根目錄建立 `.env`：
+在專案根目錄建立 `.env` 檔案，可參考 `.env.example` 範例檔案。
+
+**本地開發環境：**
+
+1. 複製範例檔案：
+   ```bash
+   cp .env.example .env
+   ```
+
+2. 填入以下環境變數：
 
 ```env
-DATABASE_URL
-NEXTAUTH_URL
-NEXTAUTH_SECRET
-GOOGLE_CLIENT_ID
-GOOGLE_CLIENT_SECRET
+# Database
+DATABASE_URL=postgresql://user:password@host/database?sslmode=require
+
+# NextAuth.js
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-secret-key-here
+
+# Google OAuth
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+
+# GitHub OAuth
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
+```
+
+**取得 OAuth 憑證：**
+
+- **Google OAuth**: 前往 [Google Cloud Console](https://console.cloud.google.com/apis/credentials) 建立 OAuth 2.0 憑證
+- **GitHub OAuth**: 前往 [GitHub Developer Settings](https://github.com/settings/developers) 建立 OAuth App
+
+**產生 NEXTAUTH_SECRET：**
+
+```bash
+openssl rand -base64 32
+```
+
+**Vercel 部署：**
+
+在 Vercel 專案設定中的 Environment Variables 頁面設定上述所有環境變數。
