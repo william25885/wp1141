@@ -216,4 +216,30 @@ openssl rand -base64 32
 
 **Vercel 部署：**
 
-在 Vercel 專案設定中的 Environment Variables 頁面設定上述所有環境變數。
+1. **連接 GitHub 倉庫到 Vercel**：
+   - 前往 [Vercel](https://vercel.com/) 並登入
+   - 點擊 "Add New Project"
+   - 選擇您的 GitHub 倉庫
+
+2. **設定環境變數**：
+   在 Vercel 專案設定中的 **Environment Variables** 頁面設定以下所有環境變數：
+   - `DATABASE_URL` - PostgreSQL 連線字串
+   - `NEXTAUTH_URL` - 您的 Vercel 部署 URL（例如：`https://your-app.vercel.app`）
+   - `NEXTAUTH_SECRET` - 隨機密鑰（可使用 PowerShell 命令產生）
+   - `GOOGLE_CLIENT_ID` - Google OAuth Client ID
+   - `GOOGLE_CLIENT_SECRET` - Google OAuth Client Secret
+   - `GITHUB_CLIENT_ID` - GitHub OAuth Client ID（如果使用）
+   - `GITHUB_CLIENT_SECRET` - GitHub OAuth Client Secret（如果使用）
+
+3. **資料庫 Migration**：
+   - 專案已設定在 build 時自動執行 `prisma migrate deploy`
+   - 首次部署時會自動建立資料庫結構
+
+4. **OAuth 設定**：
+   - 確保在 Google/GitHub OAuth 設定中加入生產環境的 URL：
+     - **已授權的 JavaScript 來源**：`https://your-app.vercel.app`
+     - **已授權的重新導向 URI**：`https://your-app.vercel.app/api/auth/callback/google`（或 `/github`）
+
+5. **部署**：
+   - 點擊 "Deploy" 開始部署
+   - 部署完成後即可使用
