@@ -118,7 +118,7 @@ export default async function HomePage() {
                     <a href={`/${post.author.userId}`}>
                       <img
                         src={post.author.image ?? "/default-avatar.png"}
-                        alt={post.author.userId}
+                        alt={post.author.userId ?? "User"}
                         className="w-9 h-9 rounded-full object-cover bg-slate-800"
                       />
                     </a>
