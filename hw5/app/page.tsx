@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { NewPostForm } from "./_components/NewPostForm";
 import { LikeButton } from "./_components/LikeButton";
 import { RepostButton } from "./_components/RepostButton";
+import { ReplyButton } from "./_components/ReplyButton";
 import { LogoutButton } from "./_components/LogoutButton";
 
 export default async function HomePage() {
@@ -23,6 +24,7 @@ export default async function HomePage() {
   if (!me?.userId) redirect("/setup");
 
   const posts = await prisma.post.findMany({
+    where: { replyToId: null }, // 只顯示原始貼文，不顯示回覆
     orderBy: { createdAt: "desc" },
     include: {
       author: { select: { userId: true, name: true, image: true } },
@@ -143,21 +145,23 @@ export default async function HomePage() {
                         {post.content}
                       </p>
 
-                      <div className="mt-2 flex gap-7 text-xs text-slate-500">
-                        <div className="flex items-center gap-1.5 cursor-default">
-                          <span className="text-lg leading-none">💬</span>
-                          <span>{post._count.replies}</span>
+                      <div className="mt-2 flex flex-col gap-2">
+                        <div className="flex gap-7 text-xs text-slate-500">
+                          <ReplyButton
+                            postId={post.id}
+                            replyCount={post._count.replies}
+                          />
+                          <RepostButton
+                            postId={post.id}
+                            initialCount={post._count.reposts}
+                            initialReposted={post.reposts.length > 0}
+                          />
+                          <LikeButton
+                            postId={post.id}
+                            initialCount={post._count.likes}
+                            initialLiked={post.likes.length > 0}
+                          />
                         </div>
-                        <RepostButton
-                          postId={post.id}
-                          initialCount={post._count.reposts}
-                          initialReposted={post.reposts.length > 0}
-                        />
-                        <LikeButton
-                          postId={post.id}
-                          initialCount={post._count.likes}
-                          initialLiked={post.likes.length > 0}
-                        />
                       </div>
                     </div>
                   </div>
