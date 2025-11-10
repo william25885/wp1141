@@ -6,6 +6,7 @@ import { NewPostForm } from "./_components/NewPostForm";
 import { LikeButton } from "./_components/LikeButton";
 import { RepostButton } from "./_components/RepostButton";
 import { ReplyButton } from "./_components/ReplyButton";
+import { ReplyItem } from "./_components/ReplyItem";
 import { LogoutButton } from "./_components/LogoutButton";
 
 export default async function HomePage() {
@@ -30,6 +31,13 @@ export default async function HomePage() {
       author: { select: { userId: true, name: true, image: true } },
       likes: { where: { userId: me.id }, select: { id: true } },
       reposts: { where: { userId: me.id }, select: { id: true } },
+      replies: {
+        orderBy: { createdAt: "asc" },
+        include: {
+          author: { select: { userId: true, name: true, image: true } },
+        },
+        take: 10, // 最多顯示 10 則回覆
+      },
       _count: { select: { likes: true, reposts: true, replies: true } },
     },
     take: 50,
@@ -113,6 +121,12 @@ export default async function HomePage() {
                 author: { userId: string | null; name: string | null; image: string | null };
                 likes: { id: string }[];
                 reposts: { id: string }[];
+                replies: {
+                  id: string;
+                  content: string;
+                  createdAt: Date;
+                  author: { userId: string | null; name: string | null; image: string | null };
+                }[];
                 _count: { likes: number; reposts: number; replies: number };
               }) => (
                 <article
@@ -162,6 +176,20 @@ export default async function HomePage() {
                             initialLiked={post.likes.length > 0}
                           />
                         </div>
+
+                        {/* 顯示回覆列表 */}
+                        {post.replies.length > 0 && (
+                          <div className="mt-3 space-y-0">
+                            {post.replies.map((reply) => (
+                              <ReplyItem key={reply.id} reply={reply} />
+                            ))}
+                            {post._count.replies > post.replies.length && (
+                              <div className="mt-2 text-[10px] text-slate-500 pl-10">
+                                還有 {post._count.replies - post.replies.length} 則回覆...
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
