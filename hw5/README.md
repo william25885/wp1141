@@ -4,6 +4,10 @@
 
 ---
 
+## 🌐 部署連結
+
+--- https://wp1141-black.vercel.app/
+
 技術
 
 - [Next.js 14 / App Router](https://nextjs.org/)
@@ -119,6 +123,20 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 GITHUB_CLIENT_ID=your-github-client-id
 GITHUB_CLIENT_SECRET=your-github-client-secret
 ```
+
+**取得資料庫連線字串 (DATABASE_URL)：**
+
+1. **使用 Neon（推薦）：**
+   - 前往 [Neon](https://neon.tech/) 註冊帳號
+   - 建立新的 PostgreSQL 專案
+   - 在專案 Dashboard 中找到 **Connection string**
+   - 複製連線字串，格式類似：`postgresql://user:password@host/database?sslmode=require`
+   - 將連線字串貼到 `.env` 檔案的 `DATABASE_URL` 欄位
+
+2. **使用其他 PostgreSQL 服務：**
+   - 建立 PostgreSQL 資料庫後，取得連線字串
+   - 格式：`postgresql://username:password@host:port/database?sslmode=require`
+   - 將連線字串貼到 `.env` 檔案的 `DATABASE_URL` 欄位
 
 **取得 OAuth 憑證：**
 
