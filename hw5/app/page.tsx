@@ -4,6 +4,7 @@ import { authOptions } from "./api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { NewPostForm } from "./_components/NewPostForm";
 import { LikeButton } from "./_components/LikeButton";
+import { RepostButton } from "./_components/RepostButton";
 import { LogoutButton } from "./_components/LogoutButton";
 
 export default async function HomePage() {
@@ -26,6 +27,7 @@ export default async function HomePage() {
     include: {
       author: { select: { userId: true, name: true, image: true } },
       likes: { where: { userId: me.id }, select: { id: true } },
+      reposts: { where: { userId: me.id }, select: { id: true } },
       _count: { select: { likes: true, reposts: true, replies: true } },
     },
     take: 50,
@@ -108,6 +110,7 @@ export default async function HomePage() {
                 createdAt: Date;
                 author: { userId: string | null; name: string | null; image: string | null };
                 likes: { id: string }[];
+                reposts: { id: string }[];
                 _count: { likes: number; reposts: number; replies: number };
               }) => (
                 <article
@@ -145,10 +148,11 @@ export default async function HomePage() {
                           <span className="text-lg leading-none">💬</span>
                           <span>{post._count.replies}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 cursor-default">
-                          <span className="text-lg leading-none">🌊</span>
-                          <span>{post._count.reposts}</span>
-                        </div>
+                        <RepostButton
+                          postId={post.id}
+                          initialCount={post._count.reposts}
+                          initialReposted={post.reposts.length > 0}
+                        />
                         <LikeButton
                           postId={post.id}
                           initialCount={post._count.likes}
