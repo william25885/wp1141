@@ -6,7 +6,7 @@
 
 ## 🌐 部署連結
 
---- https://wp1141-black.vercel.app/
+[Live Demo](https://wp1141-black.vercel.app/)
 
 技術
 
@@ -94,7 +94,51 @@
 
 ---
 
-環境變數設定
+## 🚀 開始使用
+
+### 環境需求
+
+- Node.js 18+ 和 npm/yarn
+- PostgreSQL 資料庫（建議使用 [Neon](https://neon.tech/)）
+
+### 安裝步驟
+
+1. **安裝 Node.js**（如果尚未安裝）：
+   - 前往 [Node.js 官網](https://nodejs.org/) 下載並安裝
+   - 安裝完成後，在終端執行 `node --version` 確認安裝成功
+
+2. **安裝 Yarn**（可選，專案使用 yarn）：
+   ```bash
+   npm install -g yarn
+   ```
+
+3. **安裝專案依賴**：
+   ```bash
+   yarn install
+   # 或使用 npm
+   npm install
+   ```
+
+4. **設定資料庫**：
+   - 執行 Prisma migration：
+     ```bash
+     npx prisma migrate dev
+     # 或使用 yarn
+     yarn prisma migrate dev
+     ```
+
+5. **啟動開發伺服器**：
+   ```bash
+   yarn dev
+   # 或使用 npm
+   npm run dev
+   ```
+
+6. 開啟瀏覽器訪問 [http://localhost:3000](http://localhost:3000)
+
+---
+
+## ⚙️ 環境變數設定
 
 在專案根目錄建立 `.env` 檔案，可參考 `.env.example` 範例檔案。
 
@@ -141,13 +185,34 @@ GITHUB_CLIENT_SECRET=your-github-client-secret
 **取得 OAuth 憑證：**
 
 - **Google OAuth**: 前往 [Google Cloud Console](https://console.cloud.google.com/apis/credentials) 建立 OAuth 2.0 憑證
+  - 在 OAuth 憑證設定中，需要設定以下內容：
+    - **已授權的 JavaScript 來源**：
+      - `http://localhost:3000`（本地開發用）
+      - `https://your-domain.vercel.app`（生產環境用）
+    - **已授權的重新導向 URI**：
+      - `http://localhost:3000/api/auth/callback/google`（本地開發用）
+      - `https://your-domain.vercel.app/api/auth/callback/google`（生產環境用）
+
 - **GitHub OAuth**: 前往 [GitHub Developer Settings](https://github.com/settings/developers) 建立 OAuth App
+  - 在 OAuth App 設定中，需要設定以下內容：
+    - **Authorization callback URL**：
+      - `http://localhost:3000/api/auth/callback/github`（本地開發用）
+      - `https://your-domain.vercel.app/api/auth/callback/github`（生產環境用）
 
 **產生 NEXTAUTH_SECRET：**
 
+**Linux / macOS：**
 ```bash
 openssl rand -base64 32
 ```
+
+**Windows PowerShell：**
+```powershell
+[Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
+```
+
+**或使用線上工具：**
+- 前往 [generate-secret.vercel.app](https://generate-secret.vercel.app/32) 產生隨機密鑰
 
 **Vercel 部署：**
 
