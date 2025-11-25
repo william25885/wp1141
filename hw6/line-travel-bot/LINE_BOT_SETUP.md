@@ -140,56 +140,7 @@
    - 進入「對話紀錄」頁面
    - 應該能看到剛才的對話紀錄
 
-## 步驟 6: 設定 Rich Menu（固定功能選單）
-
-Rich Menu 是一個固定在聊天室底部的選單，讓使用者可以隨時點擊功能按鈕，而不需要輸入文字。
-
-### 6.1 設定 Rich Menu
-
-1. **部署完成後**，訪問以下 URL 來設定 Rich Menu：
-   ```
-   https://your-project-name.vercel.app/api/webhook/setup-menu
-   ```
-
-2. **使用 POST 請求**（可以使用 curl 或任何 HTTP 客戶端）：
-   ```bash
-   curl -X POST https://your-project-name.vercel.app/api/webhook/setup-menu
-   ```
-
-3. **如果設定成功**，會收到類似以下的回應：
-   ```json
-   {
-     "success": true,
-     "message": "Rich Menu 設定成功！",
-     "richMenuId": "richmenu-xxxxx",
-     "info": "功能選單現在會一直顯示在聊天室底部，使用者可以隨時點擊使用。"
-   }
-   ```
-
-4. **驗證 Rich Menu**：
-   - 使用 GET 請求查看目前的 Rich Menu 設定：
-     ```bash
-     curl https://your-project-name.vercel.app/api/webhook/setup-menu
-     ```
-
-### 6.2 Rich Menu 功能按鈕
-
-設定完成後，聊天室底部會顯示以下功能按鈕：
-
-- **旅遊推薦**：開始旅遊規劃流程
-- **查詢偏好**：查看已保存的旅遊偏好
-- **查看上次行程**：查看最近的行程規劃記錄
-- **修改偏好**：重置偏好並重新開始規劃
-- **功能**：顯示功能選單（備用）
-- **更多**：LINE 的更多選項
-
-### 6.3 注意事項
-
-- Rich Menu 會自動套用到所有使用者
-- 如果 Rich Menu 未設定，使用者仍可透過輸入「功能」來查看功能選單
-- 可以隨時重新設定 Rich Menu，新的設定會覆蓋舊的
-
-## 步驟 7: 驗證後台功能
+## 步驟 6: 驗證後台功能
 
 1. **登入後台**：`https://your-project-name.vercel.app/admin`
 2. **查看對話列表**：`/admin/conversations`
@@ -272,8 +223,6 @@ Rich Menu 是一個固定在聊天室底部的選單，讓使用者可以隨時�
 - [ ] 啟用 **Use webhook**
 - [ ] 關閉 **Auto-reply messages**
 - [ ] 測試 Bot 對話功能
-- [ ] 設定 Rich Menu（訪問 `/api/webhook/setup-menu`）
-- [ ] 驗證 Rich Menu 在聊天室底部顯示
 - [ ] 驗證後台可以看到對話紀錄
 
 ## 後續維護
