@@ -31,6 +31,29 @@ function cleanJsonResponse(text: string): string {
   return cleaned;
 }
 
+// Helper to call Gemini API with retry logic for 503 errors
+async function callGeminiWithRetry(
+  apiCall: () => Promise<any>, 
+  maxRetries = 3, 
+  delayMs = 2000
+): Promise<any> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await apiCall();
+    } catch (error: any) {
+      const isOverloaded = error.message?.includes('503') || error.status === 503;
+      if (isOverloaded && attempt < maxRetries) {
+        console.warn(`Gemini API overloaded (503). Retrying attempt ${attempt}/${maxRetries} in ${delayMs}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+        // Exponential backoff
+        delayMs *= 2; 
+      } else {
+        throw error;
+      }
+    }
+  }
+}
+
 /**
  * 解析使用者輸入，提取旅遊偏好
  */
@@ -43,7 +66,7 @@ export async function extractTravelPreferences(userInput: string, currentContext
   try {
     const prompt = getExtractionPrompt(userInput, currentContext);
     
-    const result = await model.generateContent({
+    const result = await callGeminiWithRetry(() => model.generateContent({
       contents: [
         { role: "user", parts: [{ text: EXTRACTION_SYSTEM_PROMPT }] },
         { role: "user", parts: [{ text: prompt }] }
@@ -51,7 +74,7 @@ export async function extractTravelPreferences(userInput: string, currentContext
       generationConfig: {
         responseMimeType: "application/json",
       }
-    });
+    }));
 
     const responseText = result.response.text();
     console.log("Gemini extraction raw response:", responseText);
@@ -80,7 +103,7 @@ export async function generateItinerary(preferences: {
   try {
     const prompt = getGenerationPrompt(preferences);
     
-    const result = await model.generateContent({
+    const result = await callGeminiWithRetry(() => model.generateContent({
       contents: [
         { role: "user", parts: [{ text: GENERATION_SYSTEM_PROMPT }] },
         { role: "user", parts: [{ text: prompt }] }
@@ -88,7 +111,7 @@ export async function generateItinerary(preferences: {
       generationConfig: {
         responseMimeType: "application/json",
       }
-    });
+    }));
 
     const responseText = result.response.text();
     console.log("Gemini generation raw response:", responseText);
@@ -111,7 +134,7 @@ export async function refineItinerary(currentItinerary: any, userFeedback: strin
   try {
     const prompt = getRefinementPrompt(currentItinerary, userFeedback);
     
-    const result = await model.generateContent({
+    const result = await callGeminiWithRetry(() => model.generateContent({
       contents: [
         { role: "user", parts: [{ text: REFINEMENT_SYSTEM_PROMPT }] },
         { role: "user", parts: [{ text: prompt }] }
@@ -119,7 +142,7 @@ export async function refineItinerary(currentItinerary: any, userFeedback: strin
       generationConfig: {
         responseMimeType: "application/json",
       }
-    });
+    }));
 
     const responseText = result.response.text();
     return JSON.parse(cleanJsonResponse(responseText));
