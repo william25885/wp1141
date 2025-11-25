@@ -14,8 +14,8 @@ const genAI = process.env.GEMINI_API_KEY
   ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
   : null;
 
-// Use gemini-2.0-flash-exp as requested (assuming user meant 2.0, as 2.5 doesn't exist yet)
-const model = genAI ? genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" }) : null;
+// Use gemini-2.5-flash as requested (Standard model post-Sep 2025)
+const model = genAI ? genAI.getGenerativeModel({ model: "gemini-2.5-flash" }) : null;
 
 // Helper to clean JSON response from LLM
 function cleanJsonResponse(text: string): string {
