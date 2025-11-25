@@ -96,6 +96,129 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
     },
   });
 
+  // Handle Quick Reply menu options and special commands
+  // TODO: 未來可整合 Gemini API 來處理這些指令，提供更智能的回應
+  if (text === "旅遊推薦") {
+    // Start the travel planning flow
+    const responseMessages = getResponseMessages("ASK_COUNTRY");
+    
+    // Store Bot Messages
+    for (const msg of responseMessages) {
+      let contentToStore = "";
+      if (msg.type === "text") {
+        contentToStore = msg.text;
+      } else if (msg.type === "template") {
+        contentToStore = `[Template: ${msg.altText}]`;
+      } else {
+        contentToStore = `[${msg.type}]`;
+      }
+
+      await prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          role: "bot",
+          content: contentToStore,
+        },
+      });
+    }
+
+    return responseMessages;
+  } else if (text === "查詢偏好") {
+    // Query user's saved preferences
+    const preference = conversation.preference;
+    if (preference && (preference.country || preference.days || preference.budget || preference.themes || preference.month)) {
+      const preferenceText = `你目前的旅遊偏好：\n${preference.country ? `📍 目的地：${preference.country}\n` : ''}${preference.days ? `📅 天數：${preference.days}\n` : ''}${preference.budget ? `💰 預算：${preference.budget}\n` : ''}${preference.themes ? `🎯 主題：${preference.themes}\n` : ''}${preference.month ? `📆 月份：${preference.month}\n` : ''}\n要開始規劃嗎？直接告訴我你的需求即可！`;
+      
+      const reply: Message = { type: "text", text: preferenceText };
+      await prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          role: "bot",
+          content: preferenceText,
+        },
+      });
+      return [reply];
+    } else {
+      const reply: Message = { type: "text", text: "目前還沒有保存的偏好設定。\n點擊「旅遊推薦」開始規劃你的行程吧！" };
+      await prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          role: "bot",
+          content: reply.text as string,
+        },
+      });
+      return [reply];
+    }
+  } else if (text === "查看上次行程") {
+    // View last recommendation
+    const lastRecommendation = await prisma.travelRecommendation.findFirst({
+      where: { conversationId: conversation.id },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (lastRecommendation) {
+      const reply: Message = { type: "text", text: `上次的行程規劃：\n\n${lastRecommendation.content}\n\n要重新規劃嗎？點擊「旅遊推薦」或輸入「重新開始」` };
+      await prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          role: "bot",
+          content: lastRecommendation.content,
+        },
+      });
+      return [reply];
+    } else {
+      const reply: Message = { type: "text", text: "目前還沒有行程規劃記錄。\n點擊「旅遊推薦」開始規劃你的行程吧！" };
+      await prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          role: "bot",
+          content: reply.text as string,
+        },
+      });
+      return [reply];
+    }
+  } else if (text === "修改偏好") {
+    // Reset preferences and start over
+    await prisma.travelPreference.update({
+      where: { id: preferenceId },
+      data: {
+        country: null,
+        days: null,
+        budget: null,
+        themes: null,
+        month: null,
+      },
+    });
+    await prisma.conversation.update({
+      where: { id: conversation.id },
+      data: { status: "ASK_COUNTRY" },
+    });
+
+    const responseMessages = getResponseMessages("ASK_COUNTRY");
+    
+    // Store Bot Messages
+    for (const msg of responseMessages) {
+      let contentToStore = "";
+      if (msg.type === "text") {
+        contentToStore = msg.text;
+      } else if (msg.type === "template") {
+        contentToStore = `[Template: ${msg.altText}]`;
+      } else {
+        contentToStore = `[${msg.type}]`;
+      }
+
+      await prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          role: "bot",
+          content: contentToStore,
+        },
+      });
+    }
+
+    return responseMessages;
+  }
+
   // Process input based on CURRENT status
   // Transition to NEXT status
   let nextStatus: ConversationStatus = status;
@@ -204,6 +327,56 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
 
   // Return message for the NEW status
   return responseMessages;
+}
+
+/**
+ * 取得歡迎訊息（用於使用者加入好友時）
+ * 包含功能介紹和使用範例，並提供 Quick Reply 選單
+ * TODO: 未來可整合 Gemini API 來動態生成更個人化的歡迎訊息
+ */
+export function getWelcomeMessage(): Message[] {
+  return [
+    {
+      type: "text",
+      text: "嗨~很高興認識你！我是你的AI旅遊規劃助理 🌍\n\n我可以根據你的喜好推薦旅遊國家、景點、每日行程。\n\n你可以跟我說：\n• 我想去日本五天\n• 幫我安排3月的海島行程\n• 推薦歐洲的文化旅遊",
+      quickReply: {
+        items: [
+          {
+            type: "action",
+            action: {
+              type: "message",
+              label: "旅遊推薦",
+              text: "旅遊推薦"
+            }
+          },
+          {
+            type: "action",
+            action: {
+              type: "message",
+              label: "查詢偏好",
+              text: "查詢偏好"
+            }
+          },
+          {
+            type: "action",
+            action: {
+              type: "message",
+              label: "查看上次行程",
+              text: "查看上次行程"
+            }
+          },
+          {
+            type: "action",
+            action: {
+              type: "message",
+              label: "修改偏好",
+              text: "修改偏好"
+            }
+          }
+        ]
+      }
+    }
+  ];
 }
 
 export function getResponseMessages(status: ConversationStatus): Message[] {

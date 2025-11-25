@@ -4,6 +4,7 @@ import {
   handleUserMessage, 
   getOrCreateConversation, 
   getResponseMessages,
+  getWelcomeMessage,
   ConversationStatus 
 } from "@/lib/conversation-state";
 import { WebhookEvent, validateSignature } from "@line/bot-sdk";
@@ -46,10 +47,11 @@ export async function POST(req: Request) {
       } else if (event.type === "follow") {
         const userId = event.source.userId;
         if (userId) {
-          // Initialize conversation
-          const conversation = await getOrCreateConversation(userId);
-          // Send first prompt
-          const messages = getResponseMessages(conversation.status as ConversationStatus);
+          // Initialize conversation (but don't start the flow yet)
+          await getOrCreateConversation(userId);
+          // Send welcome message with feature introduction and Quick Reply menu
+          // TODO: 未來可整合 Gemini API 來生成更個人化的歡迎訊息
+          const messages = getWelcomeMessage();
           if (messages.length > 0 && lineClient) {
             await lineClient.replyMessage({
               replyToken: event.replyToken,
