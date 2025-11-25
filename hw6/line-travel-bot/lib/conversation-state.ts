@@ -489,10 +489,11 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
   // use rule-based logic to fill the CURRENT field with the raw text
   if (nextStatus === status) {
       // Basic validation: Check if input seems valid before directly assigning it
-      const invalidPatterns = ["不知道", "沒想法", "隨便", "都可以", "不懂", "不清楚", "無", "屁眼", "幹", "屎"];
+      // Reduced invalid patterns to allow more flexibility, focusing on format guidance instead
+      const invalidPatterns = ["不知道", "沒想法", "隨便", "都可以", "不懂", "不清楚", "無"];
       const isInvalid = invalidPatterns.some(p => text.includes(p)) || text.trim().length < 1;
       
-      // Specific validation based on current status
+      // Specific validation based on current status to guide user format
       let isFormatInvalid = false;
       
       if (status === "ASK_DAYS") {
@@ -507,14 +508,18 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
       }
 
       if (isInvalid || isFormatInvalid) {
-          // If input is invalid/unclear, don't update DB.
-          // Return a specific retry message based on current status.
-          let retryText = "抱歉，我不太理解您的意思 🤔\n請試著具體一點回答。";
+          // If input format is incorrect, guide user with specific examples
+          let retryText = "抱歉，我不太理解您的意思 🤔";
           
-          if (status === "ASK_COUNTRY") retryText = "抱歉，我不太確定您想去哪裡。\n請告訴我國家或地區，例如：日本、泰國、歐洲。";
-          else if (status === "ASK_DAYS") retryText = "請問您預計玩幾天呢？\n請包含數字，例如：5天、一週。";
-          else if (status === "ASK_BUDGET") retryText = "請問您的預算大概是多少？\n請包含金額，例如：2萬元、50000。";
-          else if (status === "ASK_MONTH") retryText = "請問您預計幾月出發？\n例如：3月、下個月。";
+          if (status === "ASK_COUNTRY") {
+              retryText = "抱歉，請告訴我您想去的「國家」或「城市」\n\n✅ 正確範例：\n• 日本\n• 台北\n• 歐洲";
+          } else if (status === "ASK_DAYS") {
+              retryText = "請問您預計玩幾天呢？請包含「數字」喔！\n\n✅ 正確範例：\n• 5天\n• 三天兩夜\n• 一週";
+          } else if (status === "ASK_BUDGET") {
+              retryText = "請問您的預算大概是多少？請包含「金額數字」\n\n✅ 正確範例：\n• 20000\n• 3萬\n• 5000元左右";
+          } else if (status === "ASK_MONTH") {
+              retryText = "請問您預計幾月出發？請包含「月份數字」\n\n✅ 正確範例：\n• 7月\n• 下個月\n• 年底";
+          }
           
           const quickReply = getFeatureQuickReply();
           const retryMsg: Message = {
