@@ -140,51 +140,54 @@
    - 進入「對話紀錄」頁面
    - 應該能看到剛才的對話紀錄
 
-## 步驟 6: 設定 Rich Menu（圖文選單）
+## 步驟 6: 設定 Rich Menu（固定功能選單）
 
-Rich Menu 是 LINE Bot 的持久選單功能，會顯示在聊天室底部，讓使用者可以隨時點擊功能按鈕。
+Rich Menu 是一個固定在聊天室底部的選單，讓使用者可以隨時點擊功能按鈕，而不需要輸入文字。
 
 ### 6.1 設定 Rich Menu
 
-1. **部署完成後，呼叫設定 API**：
-   ```bash
-   # 使用 curl 或任何 HTTP 客戶端
-   curl -X POST https://your-project-name.vercel.app/api/webhook/setup-menu
-   ```
-
-   或者在瀏覽器中訪問：
+1. **部署完成後**，訪問以下 URL 來設定 Rich Menu：
    ```
    https://your-project-name.vercel.app/api/webhook/setup-menu
    ```
 
-2. **確認設定成功**：
-   - 應該會收到 `{"success": true, "message": "Rich Menu 設定成功"}` 的回應
-   - 如果出現錯誤，檢查 Vercel Function Logs
-
-3. **查看目前的 Rich Menu**：
+2. **使用 POST 請求**（可以使用 curl 或任何 HTTP 客戶端）：
    ```bash
-   curl https://your-project-name.vercel.app/api/webhook/setup-menu
+   curl -X POST https://your-project-name.vercel.app/api/webhook/setup-menu
    ```
 
-### 6.2 驗證 Rich Menu
+3. **如果設定成功**，會收到類似以下的回應：
+   ```json
+   {
+     "success": true,
+     "message": "Rich Menu 設定成功！",
+     "richMenuId": "richmenu-xxxxx",
+     "info": "功能選單現在會一直顯示在聊天室底部，使用者可以隨時點擊使用。"
+   }
+   ```
 
-1. 在 LINE App 中打開與 Bot 的對話
-2. 應該能在聊天室底部看到「選單」按鈕
-3. 點擊「選單」按鈕，應該會顯示四個功能選項：
-   - 旅遊推薦
-   - 查詢偏好
-   - 查看上次行程
-   - 修改偏好
+4. **驗證 Rich Menu**：
+   - 使用 GET 請求查看目前的 Rich Menu 設定：
+     ```bash
+     curl https://your-project-name.vercel.app/api/webhook/setup-menu
+     ```
 
-### 6.3 自訂 Rich Menu 圖片（可選）
+### 6.2 Rich Menu 功能按鈕
 
-目前使用的是文字型 Rich Menu。如果需要更美觀的設計，可以：
+設定完成後，聊天室底部會顯示以下功能按鈕：
 
-1. 準備一張圖片（建議尺寸：2500x1686px）
-2. 將圖片上傳到可公開訪問的位置（如 Vercel 的 public 資料夾或 CDN）
-3. 修改 `/api/webhook/setup-menu/route.ts` 中的設定，加入圖片 URL
+- **旅遊推薦**：開始旅遊規劃流程
+- **查詢偏好**：查看已保存的旅遊偏好
+- **查看上次行程**：查看最近的行程規劃記錄
+- **修改偏好**：重置偏好並重新開始規劃
+- **功能**：顯示功能選單（備用）
+- **更多**：LINE 的更多選項
 
-> **注意**：Rich Menu 圖片需要符合 LINE 的規範，且必須是 HTTPS URL。
+### 6.3 注意事項
+
+- Rich Menu 會自動套用到所有使用者
+- 如果 Rich Menu 未設定，使用者仍可透過輸入「功能」來查看功能選單
+- 可以隨時重新設定 Rich Menu，新的設定會覆蓋舊的
 
 ## 步驟 7: 驗證後台功能
 
@@ -268,21 +271,9 @@ Rich Menu 是 LINE Bot 的持久選單功能，會顯示在聊天室底部，讓
 - [ ] 驗證 Webhook 連線成功
 - [ ] 啟用 **Use webhook**
 - [ ] 關閉 **Auto-reply messages**
-- [ ] **設定 Rich Menu**（呼叫 `/api/webhook/setup-menu`）
 - [ ] 測試 Bot 對話功能
-- [ ] 驗證後台可以看到對話紀錄
-
-- [ ] 在 LINE Developers Console 建立 Messaging API Channel
-- [ ] 取得並儲存 Channel Access Token
-- [ ] 取得並儲存 Channel Secret
-- [ ] 在 Vercel 設定 `LINE_CHANNEL_ACCESS_TOKEN` 環境變數
-- [ ] 在 Vercel 設定 `LINE_CHANNEL_SECRET` 環境變數
-- [ ] 重新部署 Vercel 專案（讓環境變數生效）
-- [ ] 在 LINE Developers Console 設定 Webhook URL
-- [ ] 驗證 Webhook 連線成功
-- [ ] 啟用 **Use webhook**
-- [ ] 關閉 **Auto-reply messages**
-- [ ] 測試 Bot 對話功能
+- [ ] 設定 Rich Menu（訪問 `/api/webhook/setup-menu`）
+- [ ] 驗證 Rich Menu 在聊天室底部顯示
 - [ ] 驗證後台可以看到對話紀錄
 
 ## 後續維護

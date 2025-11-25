@@ -100,7 +100,32 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
   // Note: Persistent menu is set up via /api/webhook/setup-menu endpoint
   // Users can access features via the menu at the bottom of the chat interface
   // TODO: 未來可整合 Gemini API 來處理這些指令，提供更智能的回應
-  if (text === "旅遊推薦") {
+  if (text === "功能" || text === "選單" || text === "功能列表" || text === "menu") {
+    // Show feature menu (as backup if Rich Menu is not set up)
+    const menuMessages = getFeatureMenuMessage();
+    
+    // Store Bot Messages
+    for (const msg of menuMessages) {
+      let contentToStore = "";
+      if (msg.type === "text") {
+        contentToStore = msg.text;
+      } else if (msg.type === "template") {
+        contentToStore = `[Template: ${msg.altText}]`;
+      } else {
+        contentToStore = `[${msg.type}]`;
+      }
+
+      await prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          role: "bot",
+          content: contentToStore,
+        },
+      });
+    }
+
+    return menuMessages;
+  } else if (text === "旅遊推薦") {
     // Start the travel planning flow
     const responseMessages = getResponseMessages("ASK_COUNTRY");
     
@@ -443,12 +468,10 @@ export function getResponseMessages(status: ConversationStatus): Message[] {
         text: "預計哪個月份出發呢？\n（例如：3 月、7 月）",
       }];
     case "READY":
-      return [
-        {
-          type: "text",
-          text: "太棒了～我已經獲得你的旅遊需求了！\n我正在幫你規劃專屬行程，請稍候 2 秒\n\n💡 提示：點擊聊天室底部的「選單」按鈕可以查看其他功能！",
-        }
-      ];
+      return [{
+        type: "text",
+        text: "太棒了～我已經獲得你的旅遊需求了！\n我正在幫你規劃專屬行程，請稍候 2 秒\n\n💡 提示：點擊聊天室底部的「選單」按鈕可以查看其他功能！",
+      }];
     default:
       return [{ type: "text", text: "發生錯誤，請稍後再試。" }];
   }
