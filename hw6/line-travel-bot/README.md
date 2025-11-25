@@ -10,7 +10,6 @@
 
 ### 🤖 LINE Bot
 - **LINE 好友資訊**：[@083lhmmz](https://line.me/R/ti/p/@083lhmmz)
-  - 掃描 QR Code 或點擊連結即可加入 Bot 為好友
 
 ---
 
