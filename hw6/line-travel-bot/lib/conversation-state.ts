@@ -269,8 +269,44 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
     }
 
     return menuMessages;
-  } else if (text === "旅遊推薦") {
-    // Start the travel planning flow
+  } else if (text === "旅遊推薦" || text === "重新開始" || text === "重新規劃") {
+    // Start the travel planning flow (Reset everything)
+    await prisma.travelPreference.update({
+      where: { id: preferenceId },
+      data: {
+        country: null,
+        days: null,
+        budget: null,
+        themes: null,
+        month: null,
+      },
+    });
+    
+    await prisma.conversation.update({
+      where: { id: conversation.id },
+      data: { status: "ASK_COUNTRY" },
+    });
+    
+    // If it's a "restart" command, send a welcome message with examples
+    if (text === "重新開始" || text === "重新規劃") {
+        const quickReply = getFeatureQuickReply();
+        const welcomeMsg: Message = {
+          type: "text",
+          text: "已為您重置！請告訴我您的新需求 🌍\n\n我可以根據您的喜好推薦旅遊國家、景點、每日行程。\n\n您可以試著說：\n• 我想去日本五天\n• 幫我安排3月的海島行程\n• 推薦歐洲的文化旅遊",
+          quickReply: quickReply
+        };
+
+        await prisma.message.create({
+          data: {
+            conversationId: conversation.id,
+            role: "bot",
+            content: welcomeMsg.text as string,
+          },
+        });
+        
+        return [welcomeMsg];
+    }
+
     const responseMessages = getResponseMessages("ASK_COUNTRY");
     
     // Store Bot Messages
