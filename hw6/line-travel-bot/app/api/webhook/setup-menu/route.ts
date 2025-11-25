@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { lineClient } from "@/lib/line-bot";
+import { messagingApi } from "@line/bot-sdk";
+
+type RichMenuRequest = messagingApi.RichMenuRequest;
+type MessageAction = messagingApi.MessageAction;
 
 /**
  * 設定 Rich Menu（圖文選單）
@@ -21,7 +25,7 @@ export async function POST(req: Request) {
     // 注意：這裡使用文字型 Rich Menu，不需要上傳圖片
     // 如果需要更美觀的設計，可以上傳圖片後使用圖片型 Rich Menu
     
-    const richMenu = {
+    const richMenu: RichMenuRequest = {
       size: {
         width: 2500,
         height: 1686
@@ -41,7 +45,7 @@ export async function POST(req: Request) {
           action: {
             type: "message",
             text: "旅遊推薦"
-          }
+          } as MessageAction
         },
         // 右上角：查詢偏好
         {
@@ -54,7 +58,7 @@ export async function POST(req: Request) {
           action: {
             type: "message",
             text: "查詢偏好"
-          }
+          } as MessageAction
         },
         // 左下角：查看上次行程
         {
@@ -67,7 +71,7 @@ export async function POST(req: Request) {
           action: {
             type: "message",
             text: "查看上次行程"
-          }
+          } as MessageAction
         },
         // 右下角：修改偏好
         {
@@ -80,7 +84,7 @@ export async function POST(req: Request) {
           action: {
             type: "message",
             text: "修改偏好"
-          }
+          } as MessageAction
         }
       ]
     };
