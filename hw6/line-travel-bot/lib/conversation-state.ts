@@ -489,17 +489,32 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
   // use rule-based logic to fill the CURRENT field with the raw text
   if (nextStatus === status) {
       // Basic validation: Check if input seems valid before directly assigning it
-      const invalidPatterns = ["不知道", "沒想法", "隨便", "都可以", "不懂", "不清楚", "無"];
+      const invalidPatterns = ["不知道", "沒想法", "隨便", "都可以", "不懂", "不清楚", "無", "屁眼", "幹", "屎"];
       const isInvalid = invalidPatterns.some(p => text.includes(p)) || text.trim().length < 1;
+      
+      // Specific validation based on current status
+      let isFormatInvalid = false;
+      
+      if (status === "ASK_DAYS") {
+          // Must contain at least one digit or specific chinese number characters
+          if (!/\d|[一二三四五六七八九十]/.test(text)) isFormatInvalid = true;
+      } else if (status === "ASK_BUDGET") {
+          // Must contain digits or monetary keywords
+          if (!/\d|萬|千|元|塊/.test(text)) isFormatInvalid = true;
+      } else if (status === "ASK_MONTH") {
+          // Must contain digits or month keywords
+          if (!/\d|月|下個|本|年底|年初/.test(text)) isFormatInvalid = true;
+      }
 
-      if (isInvalid) {
+      if (isInvalid || isFormatInvalid) {
           // If input is invalid/unclear, don't update DB.
           // Return a specific retry message based on current status.
           let retryText = "抱歉，我不太理解您的意思 🤔\n請試著具體一點回答。";
           
           if (status === "ASK_COUNTRY") retryText = "抱歉，我不太確定您想去哪裡。\n請告訴我國家或地區，例如：日本、泰國、歐洲。";
-          else if (status === "ASK_DAYS") retryText = "請問您預計玩幾天呢？\n例如：5天、一週。";
-          else if (status === "ASK_BUDGET") retryText = "請問您的預算大概是多少？\n例如：2萬元、5萬左右。";
+          else if (status === "ASK_DAYS") retryText = "請問您預計玩幾天呢？\n請包含數字，例如：5天、一週。";
+          else if (status === "ASK_BUDGET") retryText = "請問您的預算大概是多少？\n請包含金額，例如：2萬元、50000。";
+          else if (status === "ASK_MONTH") retryText = "請問您預計幾月出發？\n例如：3月、下個月。";
           
           const quickReply = getFeatureQuickReply();
           const retryMsg: Message = {
