@@ -488,6 +488,37 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
   // Fallback: If status didn't change (meaning LLM didn't fill the current field), 
   // use rule-based logic to fill the CURRENT field with the raw text
   if (nextStatus === status) {
+      // Basic validation: Check if input seems valid before directly assigning it
+      const invalidPatterns = ["不知道", "沒想法", "隨便", "都可以", "不懂", "不清楚", "無"];
+      const isInvalid = invalidPatterns.some(p => text.includes(p)) || text.trim().length < 1;
+
+      if (isInvalid) {
+          // If input is invalid/unclear, don't update DB.
+          // Return a specific retry message based on current status.
+          let retryText = "抱歉，我不太理解您的意思 🤔\n請試著具體一點回答。";
+          
+          if (status === "ASK_COUNTRY") retryText = "抱歉，我不太確定您想去哪裡。\n請告訴我國家或地區，例如：日本、泰國、歐洲。";
+          else if (status === "ASK_DAYS") retryText = "請問您預計玩幾天呢？\n例如：5天、一週。";
+          else if (status === "ASK_BUDGET") retryText = "請問您的預算大概是多少？\n例如：2萬元、5萬左右。";
+          
+          const quickReply = getFeatureQuickReply();
+          const retryMsg: Message = {
+              type: "text",
+              text: retryText,
+              quickReply: quickReply
+          };
+          
+          await prisma.message.create({
+            data: {
+              conversationId: conversation.id,
+              role: "bot",
+              content: retryMsg.text as string,
+            },
+          });
+          
+          return [retryMsg];
+      }
+
       if (status === "ASK_COUNTRY") {
         await prisma.travelPreference.update({
           where: { id: preferenceId },
