@@ -506,6 +506,7 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
     });
     
     let flexMessage: FlexMessage | null = null;
+    let recommendationContent = "";
     
     if (!existingRec) {
       // Get latest preferences
@@ -513,7 +514,7 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
         where: { id: preferenceId } 
       });
 
-      let recommendationContent = "【系統自動生成】正在為您規劃行程... (資料不足)";
+      recommendationContent = "【系統自動生成】正在為您規劃行程... (資料不足)";
       let itineraryJson: any = null;
 
       if (finalPref && finalPref.country && finalPref.days) {
@@ -567,6 +568,9 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
                 finalPref.days, 
                 highlights.length > 0 ? highlights : ["精彩行程", "道地美食", "文化體驗"]
             );
+          } else {
+            // Gemini API failed or not configured
+            recommendationContent = "抱歉，行程生成服務暫時無法使用。請確認已設定 GEMINI_API_KEY 環境變數，或稍後再試。";
           }
         } catch (error) {
           console.error("Itinerary generation failed:", error);
@@ -580,6 +584,9 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
           content: recommendationContent,
         }
       });
+    } else {
+      // Use existing recommendation content
+      recommendationContent = existingRec.content;
     }
     
     // If flex message was created (new itinerary), return it immediately
@@ -594,6 +601,33 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
         });
         return [flexMessage];
     }
+    
+    // If no flex message but recommendation exists, return the text content
+    if (recommendationContent) {
+        const quickReply = getFeatureQuickReply();
+        const reply: Message = {
+            type: "text",
+            text: recommendationContent,
+            quickReply: quickReply
+        };
+        
+        await prisma.message.create({
+            data: {
+                conversationId: conversation.id,
+                role: "bot",
+                content: recommendationContent,
+            },
+        });
+        return [reply];
+    }
+    
+    // Fallback: if nothing was created, return error message
+    const quickReply = getFeatureQuickReply();
+    return [{
+        type: "text",
+        text: "抱歉，無法生成行程。請稍後再試。",
+        quickReply: quickReply
+    }];
   }
 
   // Handle "Show Details" command
