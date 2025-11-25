@@ -41,21 +41,21 @@ export async function POST(req: Request) {
         {
           bounds: { x: 0, y: 0, width: 833, height: 843 },
           action: {
-            type: "message",
+            type: "message" as const,
             text: "旅遊推薦"
           }
         },
         {
           bounds: { x: 833, y: 0, width: 833, height: 843 },
           action: {
-            type: "message",
+            type: "message" as const,
             text: "查詢偏好"
           }
         },
         {
           bounds: { x: 1666, y: 0, width: 834, height: 843 },
           action: {
-            type: "message",
+            type: "message" as const,
             text: "查看上次行程"
           }
         },
@@ -63,21 +63,21 @@ export async function POST(req: Request) {
         {
           bounds: { x: 0, y: 843, width: 833, height: 843 },
           action: {
-            type: "message",
+            type: "message" as const,
             text: "修改偏好"
           }
         },
         {
           bounds: { x: 833, y: 843, width: 833, height: 843 },
           action: {
-            type: "message",
+            type: "message" as const,
             text: "功能"
           }
         },
         {
           bounds: { x: 1666, y: 843, width: 834, height: 843 },
           action: {
-            type: "uri",
+            type: "uri" as const,
             uri: "https://line.me/R/nv/recommendOA/@your-bot-id" // Replace with your bot's LINE ID
           }
         }
