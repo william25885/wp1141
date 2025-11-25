@@ -111,6 +111,8 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
         contentToStore = msg.text;
       } else if (msg.type === "template") {
         contentToStore = `[Template: ${msg.altText}]`;
+      } else if (msg.type === "imagemap") {
+        contentToStore = `[Image Map: ${msg.altText}]`;
       } else {
         contentToStore = `[${msg.type}]`;
       }
@@ -357,56 +359,91 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
 }
 
 /**
- * 取得功能列表訊息（使用 Button Template）
- * 適合作為功能選單，使用者可以隨時查看
+ * 取得功能列表訊息（使用 Image Map Message）
+ * 在圖片上設定可點擊區域，使用者可以點擊圖片上的按鈕
  * TODO: 未來可整合 Gemini API 來動態生成更個人化的功能列表
+ * 
+ * 注意：需要準備一張功能選單圖片（建議尺寸：1040x1040px）
+ * 圖片應該包含四個功能按鈕的視覺設計
  */
 export function getFeatureMenuMessage(): Message[] {
+  // 圖片 URL - 可以使用外部 URL 或部署後的 public 資料夾路徑
+  // 例如：https://your-domain.vercel.app/images/feature-menu.png
+  // 或使用外部圖片服務（如 Imgur, Cloudinary 等）
+  const imageUrl = process.env.FEATURE_MENU_IMAGE_URL || 
+    "https://via.placeholder.com/1040x1040/4A90E2/FFFFFF?text=功能選單\n\n旅遊推薦|查詢偏好\n查看上次行程|修改偏好";
+
   return [
     {
-      type: "template",
-      altText: "功能選單",
-      template: {
-        type: "buttons",
-        text: "請選擇功能：",
-        actions: [
-          {
-            type: "message",
-            label: "旅遊推薦",
-            text: "旅遊推薦"
+      type: "imagemap",
+      baseUrl: imageUrl,
+      altText: "功能選單 - 請點擊圖片上的按鈕",
+      baseSize: {
+        width: 1040,
+        height: 1040
+      },
+      actions: [
+        // 左上角：旅遊推薦
+        {
+          type: "message",
+          area: {
+            x: 0,
+            y: 0,
+            width: 520,
+            height: 520
           },
-          {
-            type: "message",
-            label: "查詢偏好",
-            text: "查詢偏好"
+          text: "旅遊推薦"
+        },
+        // 右上角：查詢偏好
+        {
+          type: "message",
+          area: {
+            x: 520,
+            y: 0,
+            width: 520,
+            height: 520
           },
-          {
-            type: "message",
-            label: "查看上次行程",
-            text: "查看上次行程"
+          text: "查詢偏好"
+        },
+        // 左下角：查看上次行程
+        {
+          type: "message",
+          area: {
+            x: 0,
+            y: 520,
+            width: 520,
+            height: 520
           },
-          {
-            type: "message",
-            label: "修改偏好",
-            text: "修改偏好"
-          }
-        ]
-      }
+          text: "查看上次行程"
+        },
+        // 右下角：修改偏好
+        {
+          type: "message",
+          area: {
+            x: 520,
+            y: 520,
+            width: 520,
+            height: 520
+          },
+          text: "修改偏好"
+        }
+      ]
     }
   ];
 }
 
 /**
  * 取得歡迎訊息（用於使用者加入好友時）
- * 包含功能介紹和使用範例，並提供功能選單
+ * 包含功能介紹和使用範例，並提供 Image Map 功能選單
  * TODO: 未來可整合 Gemini API 來動態生成更個人化的歡迎訊息
  */
 export function getWelcomeMessage(): Message[] {
   return [
     {
       type: "text",
-      text: "嗨~很高興認識你！我是你的AI旅遊規劃助理 🌍\n\n我可以根據你的喜好推薦旅遊國家、景點、每日行程。\n\n你可以跟我說：\n• 我想去日本五天\n• 幫我安排3月的海島行程\n• 推薦歐洲的文化旅遊\n\n💡 提示：點擊下方「選單」按鈕可隨時查看功能列表",
-    }
+      text: "嗨~很高興認識你！我是你的AI旅遊規劃助理 🌍\n\n我可以根據你的喜好推薦旅遊國家、景點、每日行程。\n\n你可以跟我說：\n• 我想去日本五天\n• 幫我安排3月的海島行程\n• 推薦歐洲的文化旅遊",
+    },
+    ...getFeatureMenuMessage()
   ];
 }
 
@@ -466,10 +503,13 @@ export function getResponseMessages(status: ConversationStatus): Message[] {
         text: "預計哪個月份出發呢？\n（例如：3 月、7 月）",
       }];
     case "READY":
-      return [{
-        type: "text",
-        text: "太棒了～我已經獲得你的旅遊需求了！\n我正在幫你規劃專屬行程，請稍候 2 秒\n\n💡 提示：點擊下方「選單」按鈕可隨時查看功能列表",
-      }];
+      return [
+        {
+          type: "text",
+          text: "太棒了～我已經獲得你的旅遊需求了！\n我正在幫你規劃專屬行程，請稍候 2 秒",
+        },
+        ...getFeatureMenuMessage()
+      ];
     default:
       return [{ type: "text", text: "發生錯誤，請稍後再試。" }];
   }
