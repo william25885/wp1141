@@ -100,34 +100,7 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
   // Note: Persistent menu is set up via /api/webhook/setup-menu endpoint
   // Users can access features via the menu at the bottom of the chat interface
   // TODO: 未來可整合 Gemini API 來處理這些指令，提供更智能的回應
-  if (text === "功能" || text === "選單" || text === "功能列表" || text === "menu") {
-    // Show feature menu as Button Template (fallback if persistent menu is not set up)
-    const menuMessages = getFeatureMenuMessage();
-    
-    // Store Bot Messages
-    for (const msg of menuMessages) {
-      let contentToStore = "";
-      if (msg.type === "text") {
-        contentToStore = msg.text;
-      } else if (msg.type === "template") {
-        contentToStore = `[Template: ${msg.altText}]`;
-      } else if (msg.type === "imagemap") {
-        contentToStore = `[Image Map: ${msg.altText}]`;
-      } else {
-        contentToStore = `[${msg.type}]`;
-      }
-
-      await prisma.message.create({
-        data: {
-          conversationId: conversation.id,
-          role: "bot",
-          content: contentToStore,
-        },
-      });
-    }
-
-    return menuMessages;
-  } else if (text === "旅遊推薦") {
+  if (text === "旅遊推薦") {
     // Start the travel planning flow
     const responseMessages = getResponseMessages("ASK_COUNTRY");
     
@@ -359,82 +332,49 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
 }
 
 /**
- * 取得功能列表訊息（使用 Image Map Message）
- * 在圖片上設定可點擊區域，使用者可以點擊圖片上的按鈕
+ * 取得功能列表訊息（使用 Button Template）
+ * 作為備用選單，當 Rich Menu 未設定時使用
+ * 主要功能選單應該透過 Rich Menu 設定（/api/webhook/setup-menu）
  * TODO: 未來可整合 Gemini API 來動態生成更個人化的功能列表
- * 
- * 注意：需要準備一張功能選單圖片（建議尺寸：1040x1040px）
- * 圖片應該包含四個功能按鈕的視覺設計
  */
 export function getFeatureMenuMessage(): Message[] {
-  // 圖片 URL - 可以使用外部 URL 或部署後的 public 資料夾路徑
-  // 例如：https://your-domain.vercel.app/images/feature-menu.png
-  // 或使用外部圖片服務（如 Imgur, Cloudinary 等）
-  const imageUrl = process.env.FEATURE_MENU_IMAGE_URL || 
-    "https://via.placeholder.com/1040x1040/4A90E2/FFFFFF?text=功能選單\n\n旅遊推薦|查詢偏好\n查看上次行程|修改偏好";
-
   return [
     {
-      type: "imagemap",
-      baseUrl: imageUrl,
-      altText: "功能選單 - 請點擊圖片上的按鈕",
-      baseSize: {
-        width: 1040,
-        height: 1040
-      },
-      actions: [
-        // 左上角：旅遊推薦
-        {
-          type: "message",
-          area: {
-            x: 0,
-            y: 0,
-            width: 520,
-            height: 520
+      type: "template",
+      altText: "功能選單",
+      template: {
+        type: "buttons",
+        text: "請選擇功能：",
+        actions: [
+          {
+            type: "message",
+            label: "旅遊推薦",
+            text: "旅遊推薦"
           },
-          text: "旅遊推薦"
-        },
-        // 右上角：查詢偏好
-        {
-          type: "message",
-          area: {
-            x: 520,
-            y: 0,
-            width: 520,
-            height: 520
+          {
+            type: "message",
+            label: "查詢偏好",
+            text: "查詢偏好"
           },
-          text: "查詢偏好"
-        },
-        // 左下角：查看上次行程
-        {
-          type: "message",
-          area: {
-            x: 0,
-            y: 520,
-            width: 520,
-            height: 520
+          {
+            type: "message",
+            label: "查看上次行程",
+            text: "查看上次行程"
           },
-          text: "查看上次行程"
-        },
-        // 右下角：修改偏好
-        {
-          type: "message",
-          area: {
-            x: 520,
-            y: 520,
-            width: 520,
-            height: 520
-          },
-          text: "修改偏好"
-        }
-      ]
+          {
+            type: "message",
+            label: "修改偏好",
+            text: "修改偏好"
+          }
+        ]
+      }
     }
   ];
 }
 
 /**
  * 取得歡迎訊息（用於使用者加入好友時）
- * 包含功能介紹和使用範例，並提供 Image Map 功能選單
+ * 包含功能介紹和使用範例，並提供功能選單
  * TODO: 未來可整合 Gemini API 來動態生成更個人化的歡迎訊息
  */
 export function getWelcomeMessage(): Message[] {
@@ -506,9 +446,8 @@ export function getResponseMessages(status: ConversationStatus): Message[] {
       return [
         {
           type: "text",
-          text: "太棒了～我已經獲得你的旅遊需求了！\n我正在幫你規劃專屬行程，請稍候 2 秒",
-        },
-        ...getFeatureMenuMessage()
+          text: "太棒了～我已經獲得你的旅遊需求了！\n我正在幫你規劃專屬行程，請稍候 2 秒\n\n💡 提示：點擊聊天室底部的「選單」按鈕可以查看其他功能！",
+        }
       ];
     default:
       return [{ type: "text", text: "發生錯誤，請稍後再試。" }];

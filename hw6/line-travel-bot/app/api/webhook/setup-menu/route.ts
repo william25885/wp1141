@@ -2,112 +2,108 @@ import { NextResponse } from "next/server";
 import { lineClient } from "@/lib/line-bot";
 
 /**
- * API endpoint to set up LINE Bot Rich Menu (圖文選單)
- * This creates a menu that appears at the bottom of the chat interface
+ * 設定 Rich Menu（圖文選單）
+ * 這個 endpoint 可以用來設定或更新 Rich Menu
+ * 呼叫方式：POST /api/webhook/setup-menu
  * 
- * Usage: POST /api/webhook/setup-menu
- * 
- * Note: Rich Menu requires an image (2500x1686px or 2500x843px)
- * This endpoint only creates the menu structure. You need to upload an image separately.
- * 
- * For easier setup, use LINE Official Account Manager:
- * https://admin-official.line.me/
+ * 注意：Rich Menu 需要先上傳圖片，然後建立 Rich Menu 物件，最後設定為預設選單
  */
 export async function POST(req: Request) {
-  // Check if LINE Bot is configured
   if (!lineClient) {
     return NextResponse.json(
-      { 
-        message: "LINE Bot is not configured. Please set LINE_CHANNEL_ACCESS_TOKEN and LINE_CHANNEL_SECRET.",
-        error: "LINE_CHANNEL_ACCESS_TOKEN not set"
-      },
+      { message: "LINE Bot is not configured" },
       { status: 503 }
     );
   }
 
   try {
-    // Define the rich menu structure (2x3 grid layout)
-    // Image size should be 2500x1686px for 2x3 layout
-    const menu = {
+    // 建立 Rich Menu 設定
+    // 注意：這裡使用文字型 Rich Menu，不需要上傳圖片
+    // 如果需要更美觀的設計，可以上傳圖片後使用圖片型 Rich Menu
+    
+    const richMenu = {
       size: {
         width: 2500,
         height: 1686
       },
-      selected: true,
+      selected: false,
       name: "功能選單",
       chatBarText: "選單",
       areas: [
-        // Row 1
+        // 左上角：旅遊推薦
         {
-          bounds: { x: 0, y: 0, width: 833, height: 843 },
+          bounds: {
+            x: 0,
+            y: 0,
+            width: 1250,
+            height: 843
+          },
           action: {
-            type: "message" as const,
+            type: "message",
             text: "旅遊推薦"
           }
         },
+        // 右上角：查詢偏好
         {
-          bounds: { x: 833, y: 0, width: 833, height: 843 },
+          bounds: {
+            x: 1250,
+            y: 0,
+            width: 1250,
+            height: 843
+          },
           action: {
-            type: "message" as const,
+            type: "message",
             text: "查詢偏好"
           }
         },
+        // 左下角：查看上次行程
         {
-          bounds: { x: 1666, y: 0, width: 834, height: 843 },
+          bounds: {
+            x: 0,
+            y: 843,
+            width: 1250,
+            height: 843
+          },
           action: {
-            type: "message" as const,
+            type: "message",
             text: "查看上次行程"
           }
         },
-        // Row 2
+        // 右下角：修改偏好
         {
-          bounds: { x: 0, y: 843, width: 833, height: 843 },
+          bounds: {
+            x: 1250,
+            y: 843,
+            width: 1250,
+            height: 843
+          },
           action: {
-            type: "message" as const,
+            type: "message",
             text: "修改偏好"
-          }
-        },
-        {
-          bounds: { x: 833, y: 843, width: 833, height: 843 },
-          action: {
-            type: "message" as const,
-            text: "功能"
-          }
-        },
-        {
-          bounds: { x: 1666, y: 843, width: 834, height: 843 },
-          action: {
-            type: "uri" as const,
-            uri: "https://line.me/R/nv/recommendOA/@your-bot-id" // Replace with your bot's LINE ID
           }
         }
       ]
     };
 
-    // Create the rich menu
-    const richMenuId = await lineClient.createRichMenu(menu);
+    // 建立 Rich Menu
+    const richMenuId = await lineClient.createRichMenu(richMenu);
 
-    // Note: You need to upload an image for the rich menu
-    // Use: POST https://api-data.line.me/v2/bot/richmenu/{richMenuId}/content
-    // Then set it as default
+    // 設定 Rich Menu 為預設選單（所有使用者都會看到）
+    await lineClient.setDefaultRichMenu(richMenuId);
 
     return NextResponse.json({
       success: true,
-      message: "Rich menu created successfully. You need to upload an image and set it as default.",
-      richMenuId: richMenuId,
-      nextSteps: [
-        "1. Upload an image (2500x1686px) to the rich menu",
-        "2. Set the rich menu as default using setDefaultRichMenu()",
-        "3. Or use LINE Official Account Manager for easier setup"
-      ]
+      message: "Rich Menu 設定成功",
+      richMenuId: richMenuId
     });
-  } catch (error: any) {
-    console.error("Error setting up rich menu:", error);
+
+  } catch (error) {
+    console.error("Error setting up Rich Menu:", error);
     return NextResponse.json(
-      {
+      { 
         success: false,
-        message: "Failed to set up rich menu",
-        error: error.message || "Unknown error"
+        message: "設定 Rich Menu 時發生錯誤",
+        error: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }
     );
@@ -115,30 +111,41 @@ export async function POST(req: Request) {
 }
 
 /**
- * GET endpoint to check if menu is set up
+ * 取得目前的 Rich Menu 資訊
  */
 export async function GET() {
   if (!lineClient) {
     return NextResponse.json(
-      { 
-        message: "LINE Bot is not configured",
-        configured: false
-      },
+      { message: "LINE Bot is not configured" },
       { status: 503 }
     );
   }
 
   try {
     const defaultRichMenuId = await lineClient.getDefaultRichMenuId();
+    
+    if (!defaultRichMenuId) {
+      return NextResponse.json({
+        hasRichMenu: false,
+        message: "目前沒有設定 Rich Menu"
+      });
+    }
+
+    const richMenu = await lineClient.getRichMenu(defaultRichMenuId);
+
     return NextResponse.json({
-      configured: true,
-      defaultRichMenuId: defaultRichMenuId || null
+      hasRichMenu: true,
+      richMenuId: defaultRichMenuId,
+      richMenu: richMenu
     });
-  } catch (error: any) {
+
+  } catch (error) {
+    console.error("Error getting Rich Menu:", error);
     return NextResponse.json(
-      {
-        configured: false,
-        error: error.message || "Unknown error"
+      { 
+        success: false,
+        message: "取得 Rich Menu 時發生錯誤",
+        error: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }
     );

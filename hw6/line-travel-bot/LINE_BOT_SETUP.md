@@ -142,25 +142,49 @@
 
 ## 步驟 6: 設定 Rich Menu（圖文選單）
 
-Rich Menu 是 LINE Bot 的底部選單功能，讓使用者可以在聊天介面下方看到功能列表。
+Rich Menu 是 LINE Bot 的持久選單功能，會顯示在聊天室底部，讓使用者可以隨時點擊功能按鈕。
 
-### 方式一：使用 LINE 官方帳號管理後台（推薦）
+### 6.1 設定 Rich Menu
 
-1. 前往 [LINE 官方帳號管理後台](https://admin-official.line.me/)
-2. 登入並選擇您的 Bot 帳號
-3. 在左側選單中，點擊 **「圖文選單」**
-4. 點擊 **「建立新頁面」**
-5. 設定選單內容：
-   - **選單名稱**：功能選單
-   - **顯示方式**：選擇「預設展開」或「預設收起」
-   - **選單按鈕**：新增以下按鈕
-     - 旅遊推薦（發送訊息：`旅遊推薦`）
-     - 查詢偏好（發送訊息：`查詢偏好`）
-     - 查看上次行程（發送訊息：`查看上次行程`）
-     - 修改偏好（發送訊息：`修改偏好`）
-6. 完成設定後，點擊 **「儲存」** 並 **「發布」**
+1. **部署完成後，呼叫設定 API**：
+   ```bash
+   # 使用 curl 或任何 HTTP 客戶端
+   curl -X POST https://your-project-name.vercel.app/api/webhook/setup-menu
+   ```
 
-詳細說明請參考 [RICH_MENU_SETUP.md](./RICH_MENU_SETUP.md)
+   或者在瀏覽器中訪問：
+   ```
+   https://your-project-name.vercel.app/api/webhook/setup-menu
+   ```
+
+2. **確認設定成功**：
+   - 應該會收到 `{"success": true, "message": "Rich Menu 設定成功"}` 的回應
+   - 如果出現錯誤，檢查 Vercel Function Logs
+
+3. **查看目前的 Rich Menu**：
+   ```bash
+   curl https://your-project-name.vercel.app/api/webhook/setup-menu
+   ```
+
+### 6.2 驗證 Rich Menu
+
+1. 在 LINE App 中打開與 Bot 的對話
+2. 應該能在聊天室底部看到「選單」按鈕
+3. 點擊「選單」按鈕，應該會顯示四個功能選項：
+   - 旅遊推薦
+   - 查詢偏好
+   - 查看上次行程
+   - 修改偏好
+
+### 6.3 自訂 Rich Menu 圖片（可選）
+
+目前使用的是文字型 Rich Menu。如果需要更美觀的設計，可以：
+
+1. 準備一張圖片（建議尺寸：2500x1686px）
+2. 將圖片上傳到可公開訪問的位置（如 Vercel 的 public 資料夾或 CDN）
+3. 修改 `/api/webhook/setup-menu/route.ts` 中的設定，加入圖片 URL
+
+> **注意**：Rich Menu 圖片需要符合 LINE 的規範，且必須是 HTTPS URL。
 
 ## 步驟 7: 驗證後台功能
 
@@ -233,6 +257,20 @@ Rich Menu 是 LINE Bot 的底部選單功能，讓使用者可以在聊天介面
 ## 檢查清單
 
 完成以下項目後，LINE Bot 即可正常運作：
+
+- [ ] 在 LINE Developers Console 建立 Messaging API Channel
+- [ ] 取得並儲存 Channel Access Token
+- [ ] 取得並儲存 Channel Secret
+- [ ] 在 Vercel 設定 `LINE_CHANNEL_ACCESS_TOKEN` 環境變數
+- [ ] 在 Vercel 設定 `LINE_CHANNEL_SECRET` 環境變數
+- [ ] 重新部署 Vercel 專案（讓環境變數生效）
+- [ ] 在 LINE Developers Console 設定 Webhook URL
+- [ ] 驗證 Webhook 連線成功
+- [ ] 啟用 **Use webhook**
+- [ ] 關閉 **Auto-reply messages**
+- [ ] **設定 Rich Menu**（呼叫 `/api/webhook/setup-menu`）
+- [ ] 測試 Bot 對話功能
+- [ ] 驗證後台可以看到對話紀錄
 
 - [ ] 在 LINE Developers Console 建立 Messaging API Channel
 - [ ] 取得並儲存 Channel Access Token
