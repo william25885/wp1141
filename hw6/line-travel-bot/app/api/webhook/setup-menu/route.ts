@@ -129,14 +129,19 @@ export async function GET() {
   }
 
   try {
-    const defaultRichMenuId = await lineClient.getDefaultRichMenuId();
+    const defaultRichMenuIdResponse = await lineClient.getDefaultRichMenuId();
     
-    if (!defaultRichMenuId) {
+    if (!defaultRichMenuIdResponse) {
       return NextResponse.json({
         hasRichMenu: false,
         message: "目前沒有設定 Rich Menu"
       });
     }
+
+    // getDefaultRichMenuId 返回 RichMenuIdResponse，需要提取 richMenuId
+    const defaultRichMenuId = typeof defaultRichMenuIdResponse === 'string' 
+      ? defaultRichMenuIdResponse 
+      : defaultRichMenuIdResponse.richMenuId;
 
     const richMenu = await lineClient.getRichMenu(defaultRichMenuId);
 
