@@ -73,22 +73,29 @@ export function ConversationFilters() {
           <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-4">
             狀態篩選
           </label>
-          <select
-            id="status"
-            name="status"
-            className="block w-full py-2.5 pl-4 pr-10 border border-gray-300 bg-white rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors sm:text-sm cursor-pointer"
-            value={status}
-            onChange={(e) => handleStatusChange(e.target.value)}
-            disabled={isPending}
-          >
-            <option value="">全部狀態</option>
-            <option value="READY">已完成 (READY)</option>
-            <option value="ASK_COUNTRY">詢問國家</option>
-            <option value="ASK_DAYS">詢問天數</option>
-            <option value="ASK_BUDGET">詢問預算</option>
-            <option value="ASK_THEMES">詢問主題</option>
-            <option value="ASK_MONTH">詢問月份</option>
-          </select>
+          <div className="relative">
+            <select
+              id="status"
+              name="status"
+              className="block w-full py-2.5 pl-4 pr-10 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors sm:text-sm cursor-pointer appearance-none"
+              value={status}
+              onChange={(e) => handleStatusChange(e.target.value)}
+              disabled={isPending}
+            >
+              <option value="">全部狀態</option>
+              <option value="READY">已完成 (READY)</option>
+              <option value="ASK_COUNTRY">詢問國家</option>
+              <option value="ASK_DAYS">詢問天數</option>
+              <option value="ASK_BUDGET">詢問預算</option>
+              <option value="ASK_THEMES">詢問主題</option>
+              <option value="ASK_MONTH">詢問月份</option>
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+              <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
         </div>
         
         {/* Search Button */}
