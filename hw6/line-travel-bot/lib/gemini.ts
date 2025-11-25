@@ -10,28 +10,23 @@ import {
 
 // Initialize Gemini API client
 const apiKey = process.env.GEMINI_API_KEY;
-// Log API Key status (safety check)
 console.log("Gemini API Key Status:", apiKey ? `Present (starts with ${apiKey.substring(0, 5)}...)` : "Missing");
 
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
 // Models configuration
-// Strictly use gemini-pro as it is the most stable for free tier/legacy keys
-const PRIMARY_MODEL = "gemini-pro";
-// Remove unstable flash models to prevent 404 errors
-const BACKUP_MODEL = "gemini-pro"; 
+// Try experimental 2.0 flash model
+const PRIMARY_MODEL = "gemini-2.0-flash-exp";
+// Fallback to 1.5 pro if available
+const BACKUP_MODEL = "gemini-1.5-pro"; 
 
 // Helper to clean JSON response from LLM
 function cleanJsonResponse(text: string): string {
-  // Remove markdown code blocks
   let cleaned = text.replace(/^```json\n|\n```$/g, "").replace(/^```\n|\n```$/g, "").trim();
-  
-  // Attempt to extract just the JSON object if there's extra text
   const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
     cleaned = jsonMatch[0];
   }
-  
   return cleaned;
 }
 
@@ -48,7 +43,7 @@ async function callGeminiWithFallback(
     console.log(`Attempting to generate with model: ${PRIMARY_MODEL}`);
     const model = genAI.getGenerativeModel({ model: PRIMARY_MODEL });
     
-    // Add timeout race to prevent Vercel hard timeout (set to 9s)
+    // Add timeout race (9s)
     const result = await Promise.race([
       model.generateContent({
         contents: [
@@ -64,8 +59,8 @@ async function callGeminiWithFallback(
   } catch (error: any) {
     console.warn(`Primary model (${PRIMARY_MODEL}) failed:`, error.message);
 
-    // If it was a timeout or server error, try one more time with the same model
-    if (error.message === "Timeout" || error.message?.includes("500") || error.message?.includes("503") || error.message?.includes("fetch")) {
+    // If error, try backup model
+    if (error.message === "Timeout" || error.message?.includes("404") || error.message?.includes("503") || error.message?.includes("fetch")) {
       console.log(`Retrying with model: ${BACKUP_MODEL}`);
       const backupModel = genAI.getGenerativeModel({ model: BACKUP_MODEL });
       
