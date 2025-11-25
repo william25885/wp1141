@@ -606,10 +606,11 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
             );
           } else {
             // Gemini API failed or not configured
+            console.error("Itinerary generation failed: itineraryJson is null");
             recommendationContent = "抱歉，行程生成服務暫時無法使用。請確認已設定 GEMINI_API_KEY 環境變數，或稍後再試。";
           }
         } catch (error) {
-          console.error("Itinerary generation failed:", error);
+          console.error("Itinerary generation failed with error:", error);
           recommendationContent = "抱歉，行程生成時發生錯誤，請稍後再試。";
         }
       }

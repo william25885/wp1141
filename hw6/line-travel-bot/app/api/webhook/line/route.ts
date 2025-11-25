@@ -11,6 +11,11 @@ import {
 import { WebhookEvent, validateSignature } from "@line/bot-sdk";
 
 export async function POST(req: Request) {
+  // Debug Log: Check Environment Variables
+  console.log("Webhook received. Environment Check:");
+  console.log("- LINE_CHANNEL_ACCESS_TOKEN:", process.env.LINE_CHANNEL_ACCESS_TOKEN ? "Set" : "Missing");
+  console.log("- GEMINI_API_KEY:", process.env.GEMINI_API_KEY ? `Set (starts with ${process.env.GEMINI_API_KEY.substring(0, 4)}...)` : "Missing");
+
   // 檢查 LINE Bot 環境變數是否設定
   if (!process.env.LINE_CHANNEL_ACCESS_TOKEN || !process.env.LINE_CHANNEL_SECRET) {
     return NextResponse.json(
