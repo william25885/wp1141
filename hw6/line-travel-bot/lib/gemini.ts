@@ -14,12 +14,21 @@ const genAI = process.env.GEMINI_API_KEY
   ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
   : null;
 
-// Use the Gemini 1.5 Pro model for better reasoning capabilities
-const model = genAI ? genAI.getGenerativeModel({ model: "gemini-1.5-pro" }) : null;
+// Use gemini-1.5-flash for faster response times and better availability
+const model = genAI ? genAI.getGenerativeModel({ model: "gemini-1.5-flash" }) : null;
 
-// Helper to clean JSON response from LLM (remove markdown code blocks)
+// Helper to clean JSON response from LLM
 function cleanJsonResponse(text: string): string {
-  return text.replace(/^```json\n|\n```$/g, "").replace(/^```\n|\n```$/g, "").trim();
+  // Remove markdown code blocks
+  let cleaned = text.replace(/^```json\n|\n```$/g, "").replace(/^```\n|\n```$/g, "").trim();
+  
+  // Attempt to extract just the JSON object if there's extra text
+  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    cleaned = jsonMatch[0];
+  }
+  
+  return cleaned;
 }
 
 /**
@@ -45,6 +54,7 @@ export async function extractTravelPreferences(userInput: string, currentContext
     });
 
     const responseText = result.response.text();
+    console.log("Gemini extraction raw response:", responseText);
     return JSON.parse(cleanJsonResponse(responseText));
   } catch (error) {
     console.error("Error calling Gemini API (extraction):", error);
@@ -81,6 +91,7 @@ export async function generateItinerary(preferences: {
     });
 
     const responseText = result.response.text();
+    console.log("Gemini generation raw response:", responseText);
     return JSON.parse(cleanJsonResponse(responseText));
   } catch (error) {
     console.error("Error calling Gemini API (generation):", error);
@@ -117,4 +128,3 @@ export async function refineItinerary(currentItinerary: any, userFeedback: strin
     return null;
   }
 }
-
