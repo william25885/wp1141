@@ -97,9 +97,11 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
   });
 
   // Handle special commands and feature menu
+  // Note: Persistent menu is set up via /api/webhook/setup-menu endpoint
+  // Users can access features via the menu at the bottom of the chat interface
   // TODO: 未來可整合 Gemini API 來處理這些指令，提供更智能的回應
   if (text === "功能" || text === "選單" || text === "功能列表" || text === "menu") {
-    // Show feature menu
+    // Show feature menu as Button Template (fallback if persistent menu is not set up)
     const menuMessages = getFeatureMenuMessage();
     
     // Store Bot Messages
@@ -403,9 +405,8 @@ export function getWelcomeMessage(): Message[] {
   return [
     {
       type: "text",
-      text: "嗨~很高興認識你！我是你的AI旅遊規劃助理 🌍\n\n我可以根據你的喜好推薦旅遊國家、景點、每日行程。\n\n你可以跟我說：\n• 我想去日本五天\n• 幫我安排3月的海島行程\n• 推薦歐洲的文化旅遊",
-    },
-    ...getFeatureMenuMessage()
+      text: "嗨~很高興認識你！我是你的AI旅遊規劃助理 🌍\n\n我可以根據你的喜好推薦旅遊國家、景點、每日行程。\n\n你可以跟我說：\n• 我想去日本五天\n• 幫我安排3月的海島行程\n• 推薦歐洲的文化旅遊\n\n💡 提示：點擊下方「選單」按鈕可隨時查看功能列表",
+    }
   ];
 }
 
@@ -465,13 +466,10 @@ export function getResponseMessages(status: ConversationStatus): Message[] {
         text: "預計哪個月份出發呢？\n（例如：3 月、7 月）",
       }];
     case "READY":
-      return [
-        {
-          type: "text",
-          text: "太棒了～我已經獲得你的旅遊需求了！\n我正在幫你規劃專屬行程，請稍候 2 秒",
-        },
-        ...getFeatureMenuMessage() // 在規劃完成後顯示功能選單
-      ];
+      return [{
+        type: "text",
+        text: "太棒了～我已經獲得你的旅遊需求了！\n我正在幫你規劃專屬行程，請稍候 2 秒\n\n💡 提示：點擊下方「選單」按鈕可隨時查看功能列表",
+      }];
     default:
       return [{ type: "text", text: "發生錯誤，請稍後再試。" }];
   }
