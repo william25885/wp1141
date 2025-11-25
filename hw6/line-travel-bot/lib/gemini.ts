@@ -16,9 +16,10 @@ console.log("Gemini API Key Status:", apiKey ? `Present (starts with ${apiKey.su
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
 // Models configuration
-// Fallback to gemini-pro as primary since flash models are unstable in this region/account
+// Strictly use gemini-pro as it is the most stable for free tier/legacy keys
 const PRIMARY_MODEL = "gemini-pro";
-const BACKUP_MODEL = "gemini-1.5-flash"; 
+// Remove unstable flash models to prevent 404 errors
+const BACKUP_MODEL = "gemini-pro"; 
 
 // Helper to clean JSON response from LLM
 function cleanJsonResponse(text: string): string {
@@ -34,7 +35,7 @@ function cleanJsonResponse(text: string): string {
   return cleaned;
 }
 
-// Helper to call Gemini API with retry and fallback logic
+// Helper to call Gemini API with retry logic
 async function callGeminiWithFallback(
   prompt: string,
   systemPrompt: string,
@@ -42,12 +43,12 @@ async function callGeminiWithFallback(
 ): Promise<any> {
   if (!genAI) throw new Error("Gemini API Key not configured");
 
-  // Try Primary Model first
+  // Try Primary Model
   try {
     console.log(`Attempting to generate with model: ${PRIMARY_MODEL}`);
     const model = genAI.getGenerativeModel({ model: PRIMARY_MODEL });
     
-    // Add timeout race to prevent Vercel hard timeout (set to 8s for safety)
+    // Add timeout race to prevent Vercel hard timeout (set to 9s)
     const result = await Promise.race([
       model.generateContent({
         contents: [
@@ -56,19 +57,18 @@ async function callGeminiWithFallback(
         ],
         generationConfig: { responseMimeType: "application/json" }
       }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 8000))
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 9000))
     ]) as any;
 
     return result;
   } catch (error: any) {
-    console.warn(`Primary model (${PRIMARY_MODEL}) failed:`, error);
+    console.warn(`Primary model (${PRIMARY_MODEL}) failed:`, error.message);
 
-    // If timeout or 404/503, try backup model
-    if (error.message === "Timeout" || error.message?.includes("404") || error.message?.includes("503") || error.message?.includes("Error fetching")) {
-      console.log(`Falling back to backup model: ${BACKUP_MODEL}`);
+    // If it was a timeout or server error, try one more time with the same model
+    if (error.message === "Timeout" || error.message?.includes("500") || error.message?.includes("503") || error.message?.includes("fetch")) {
+      console.log(`Retrying with model: ${BACKUP_MODEL}`);
       const backupModel = genAI.getGenerativeModel({ model: BACKUP_MODEL });
       
-      // No timeout race for backup to give it a chance, but Vercel might kill it
       return await backupModel.generateContent({
         contents: [
           { role: "user", parts: [{ text: systemPrompt }] },
@@ -94,7 +94,7 @@ export async function extractTravelPreferences(userInput: string, currentContext
     console.log("Gemini extraction raw response:", responseText);
     return JSON.parse(cleanJsonResponse(responseText));
   } catch (error: any) {
-    console.error("Error calling Gemini API (extraction):", error.message, error.stack);
+    console.error("Error calling Gemini API (extraction):", error.message);
     return null;
   }
 }
@@ -118,7 +118,7 @@ export async function generateItinerary(preferences: {
     console.log("Gemini generation raw response:", responseText);
     return JSON.parse(cleanJsonResponse(responseText));
   } catch (error: any) {
-    console.error("Error calling Gemini API (generation):", error.message, error.stack);
+    console.error("Error calling Gemini API (generation):", error.message);
     return null;
   }
 }
@@ -135,7 +135,7 @@ export async function refineItinerary(currentItinerary: any, userFeedback: strin
     const responseText = result.response.text();
     return JSON.parse(cleanJsonResponse(responseText));
   } catch (error: any) {
-    console.error("Error calling Gemini API (refinement):", error.message, error.stack);
+    console.error("Error calling Gemini API (refinement):", error.message);
     return null;
   }
 }
