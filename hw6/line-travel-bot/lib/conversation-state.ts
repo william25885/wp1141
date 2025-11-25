@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { Message } from "@line/bot-sdk";
+import { messagingApi } from "@line/bot-sdk";
+
+type Message = messagingApi.Message;
 
 export type ConversationStatus = 
   | "ASK_COUNTRY"
