@@ -282,6 +282,11 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
       },
     });
     
+    // Clear any existing recommendation for this conversation to ensure fresh generation
+    await prisma.travelRecommendation.deleteMany({
+      where: { conversationId: conversation.id }
+    });
+    
     await prisma.conversation.update({
       where: { id: conversation.id },
       data: { status: "ASK_COUNTRY" },
@@ -541,6 +546,14 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
   // Create recommendation if status becomes READY
   if (nextStatus === "READY") {
     console.log("Status is READY, checking recommendation...");
+    
+    // If we just transitioned to READY (status was not READY), force fresh generation
+    // by deleting any old recommendations that might exist from previous cycles
+    if (status !== "READY") {
+        await prisma.travelRecommendation.deleteMany({
+            where: { conversationId: conversation.id }
+        });
+    }
     
     // Check if recommendation already exists
     const existingRec = await prisma.travelRecommendation.findFirst({
