@@ -103,10 +103,10 @@ export default async function ConversationDetailPage({ params }: PageProps) {
              <div className="bg-white shadow sm:rounded-lg">
               <div className="px-4 py-5 sm:p-6">
                 <h3 className="text-base font-semibold leading-6 text-gray-900">推薦結果</h3>
-                <div className="mt-4 text-sm text-gray-500 space-y-4">
+                <div className="mt-4 text-sm text-gray-500 space-y-4 overflow-x-auto">
                   {conversation.recommendations.map(rec => (
                     <div key={rec.id} className="border-l-4 border-green-400 pl-4">
-                      <p className="whitespace-pre-wrap">{rec.content}</p>
+                      <p className="whitespace-pre-wrap break-words min-w-0">{rec.content}</p>
                       <p className="mt-1 text-xs text-gray-400">{new Date(rec.createdAt).toLocaleString('zh-TW')}</p>
                     </div>
                   ))}
@@ -130,13 +130,13 @@ export default async function ConversationDetailPage({ params }: PageProps) {
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-[75%] rounded-lg px-4 py-2 shadow-sm ${
+                      className={`max-w-[75%] rounded-lg px-4 py-2 shadow-sm break-words ${
                         msg.role === 'user'
                           ? 'bg-blue-600 text-white'
                           : 'bg-white text-gray-900 border border-gray-200'
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                      <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
                       <p className={`text-xs mt-1 ${msg.role === 'user' ? 'text-blue-200' : 'text-gray-400'}`}>
                         {new Date(msg.createdAt).toLocaleString('zh-TW')}
                       </p>
