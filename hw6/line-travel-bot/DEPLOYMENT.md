@@ -108,6 +108,11 @@ GEMINI_API_KEY=your-gemini-api-key
 3. 點擊 **Create API Key**
 4. 複製產生的 API Key
 
+> **重要**：Gemini API Key 是免費的，但有限制。建議：
+> - 使用 `gemini-2.0-flash-exp` 或 `gemini-pro` 模型（免費層級）
+> - 如果遇到 404 錯誤，可能是您的 API Key 沒有權限使用該模型，請嘗試其他模型
+> - 如果遇到 503 錯誤（服務過載），系統會自動重試或切換到備用模型
+
 ### 4.4 資料庫 Schema 同步
 
 **重要**：本專案的 build 腳本已設定為只執行 `prisma generate`，不執行 migration。這是因為：
@@ -133,10 +138,17 @@ npx prisma migrate dev --name init
 
 ## 步驟 5: 驗證部署
 
-1. 訪問您的 Vercel URL：`https://your-domain.vercel.app`
-2. 測試後台登入：`https://your-domain.vercel.app/admin`
-3. 確認 Google OAuth 登入正常運作
-4. 測試後台功能（對話列表、詳情、搜尋、數據分析）
+1. **訪問您的 Vercel URL**：`https://your-domain.vercel.app`
+2. **測試後台登入**：`https://your-domain.vercel.app/admin`
+   - 確認 Google OAuth 登入正常運作
+   - 測試後台功能（對話列表、詳情、搜尋、數據分析）
+3. **測試 LINE Bot（如果已設定）**：
+   - 發送訊息給 Bot，確認能正常回應
+   - 測試自然語言輸入（例如：「我想去日本五天」）
+   - 確認 AI 能正確提取偏好並生成行程
+4. **檢查 Vercel Function Logs**：
+   - 確認沒有錯誤訊息
+   - 檢查 Gemini API 呼叫是否正常
 
 ## 步驟 6: 設定 LINE Webhook（如果啟用 LINE Bot）
 
@@ -171,6 +183,20 @@ npx prisma migrate dev --name init
 - 確認 `package.json` 中的 `build` 腳本包含 `prisma generate`
 - 檢查 Vercel 的 Build Logs 查看詳細錯誤
 - 確認 Node.js 版本（建議 18.x 或以上）
+
+### 問題 5: Gemini API 錯誤
+
+**可能原因：**
+- API Key 未設定或錯誤
+- 模型名稱不支援（404 錯誤）
+- 服務過載（503 錯誤）
+
+**解決方法：**
+1. 確認 `GEMINI_API_KEY` 環境變數已正確設定
+2. 檢查 Vercel Function Logs 查看詳細錯誤訊息
+3. 如果遇到 404，可能是模型名稱問題，系統會自動切換到備用模型
+4. 如果遇到 503，系統會自動重試，請稍候再試
+5. 確認 API Key 有權限使用 Gemini API
 
 ## 環境變數檢查清單
 

@@ -7,6 +7,7 @@
 1. ✅ 專案已部署到 Vercel
 2. ✅ 資料庫已設定並可正常連線
 3. ✅ LINE Developers Console 帳號
+4. ✅ **（建議）** Google Gemini API Key - 用於啟用 AI 智能對話與行程生成功能
 
 ## 步驟 1: 在 LINE Developers Console 建立 Bot
 
@@ -53,23 +54,31 @@
 
 1. 前往您的 Vercel 專案頁面
 2. 進入 **Settings** > **Environment Variables**
-3. 新增以下兩個環境變數：
+3. 新增以下環境變數：
 
-   **變數 1:**
+   **變數 1: LINE Bot 設定**
    - **Name**: `LINE_CHANNEL_ACCESS_TOKEN`
    - **Value**: 貼上步驟 2.2 取得的 Channel Access Token
    - **Environment**: 選擇 `Production`, `Preview`, `Development`（建議全選）
 
-   **變數 2:**
+   **變數 2: LINE Bot 設定**
    - **Name**: `LINE_CHANNEL_SECRET`
    - **Value**: 貼上步驟 2.1 取得的 Channel Secret
    - **Environment**: 選擇 `Production`, `Preview`, `Development`（建議全選）
+
+   **變數 3: AI 功能（建議設定）**
+   - **Name**: `GEMINI_API_KEY`
+   - **Value**: 您的 Google Gemini API Key
+   - **Environment**: 選擇 `Production`, `Preview`, `Development`（建議全選）
+   - **如何取得**：前往 [Google AI Studio](https://makersuite.google.com/app/apikey) 建立 API Key
 
 4. 點擊 **Save** 儲存
 
 5. **重要**：設定環境變數後，需要重新部署才能生效
    - 前往 **Deployments** 頁面
    - 點擊最新部署旁邊的 **...** > **Redeploy**
+
+> **注意**：如果未設定 `GEMINI_API_KEY`，Bot 仍可運作，但只能使用規則式對話流程，無法理解自然語言或生成詳細行程。
 
 ## 步驟 4: 設定 Webhook URL
 
@@ -122,6 +131,8 @@
 
 ### 5.2 測試對話流程
 
+#### 基本對話測試
+
 發送以下訊息測試 Bot 功能：
 
 1. **發送任意訊息**（例如：`你好`）
@@ -139,6 +150,26 @@
    - 登入後台管理系統：`https://your-project-name.vercel.app/admin`
    - 進入「對話紀錄」頁面
    - 應該能看到剛才的對話紀錄
+
+#### AI 功能測試（需要設定 GEMINI_API_KEY）
+
+如果已設定 `GEMINI_API_KEY`，可以測試 AI 智能功能：
+
+1. **自然語言輸入測試**：
+   - 輸入：「我想去日本五天」
+   - Bot 應該自動提取 `country: "日本"` 和 `days: "5天"`，並直接跳到下一個問題
+
+2. **完整需求測試**：
+   - 輸入：「幫我安排3月的海島行程，預算2萬」
+   - Bot 應該自動提取多個偏好，減少對話輪次
+
+3. **行程生成測試**：
+   - 完成所有問題後，Bot 應該自動生成詳細的每日行程
+   - 包含景點、活動時間、餐飲推薦和 Google Maps 連結
+
+4. **輸入驗證測試**：
+   - 輸入無意義內容（例如：在問天數時輸入「屁眼」）
+   - Bot 應該回傳格式引導訊息，要求重新輸入
 
 ## 步驟 6: 驗證後台功能
 

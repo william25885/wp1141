@@ -79,10 +79,7 @@ hw6/line-travel-bot/
    ```
 
 3. **設定環境變數**：
-   ```bash
-   cp .env.example .env
-   ```
-   編輯 `.env` 檔案，填入必要的環境變數（詳見下方）。
+   在專案根目錄建立 `.env` 檔案，填入必要的環境變數（詳見下方）。
 
 4. **初始化資料庫**：
    ```bash
@@ -137,16 +134,6 @@ GEMINI_API_KEY=your-gemini-api-key
 3. 點擊 **Create API Key**
 4. 複製產生的 API Key
 
-## 測試資料
-
-插入測試資料以測試後台功能：
-
-```bash
-yarn seed:test
-```
-
-這會建立 5 個測試使用者與 8 個對話紀錄，包含不同狀態的對話與完整的旅遊偏好資料。
-
 ## 開發指令
 
 ```bash
@@ -162,24 +149,9 @@ yarn start
 # 執行 Lint
 yarn lint
 
-# 插入測試資料
-yarn seed:test
-
-# 執行 Phase 3 測試
-yarn test:phase3
-
 # 開啟 Prisma Studio（資料庫管理工具）
 npx prisma studio
 ```
-
-## 測試指南
-
-專案包含多個階段的測試文件：
-
-- **TEST_PHASE3.md**: 資料庫儲存系統測試
-- **TEST_PHASE4.md**: 後台登入與權限測試
-- **TEST_PHASE5.md**: 對話列表與詳情頁面測試
-- **TEST_PHASE6.md**: 搜尋、篩選與數據分析測試
 
 ## 部署
 
@@ -200,12 +172,38 @@ npx prisma studio
 - ✅ **Phase 5**: 對話列表與詳情頁面
 - ✅ **Phase 6**: 搜尋、篩選與數據分析
 - ✅ **Phase 7**: 部署準備與文件撰寫
+- ✅ **Phase 8**: LLM 整合（Gemini API）與智能對話
+
+## AI 功能說明
+
+本專案整合了 **Google Gemini API**，提供以下智能功能：
+
+### 自然語言理解
+- **智能提取**：從使用者的自然語言輸入中自動提取旅遊偏好
+  - 例如：「我想去日本五天」→ 自動提取 `country: "日本"`, `days: "5天"`
+  - 例如：「幫我安排3月的海島行程」→ 自動提取 `month: "3月"`, `themes: "海島"`
+
+### 行程生成
+- **AI 行程規劃**：根據使用者的偏好自動生成詳細的每日行程
+  - 包含景點、活動時間、餐飲推薦
+  - 提供 Google Maps 連結
+  - 包含旅遊小撇步
+
+### 輸入驗證
+- **格式檢查**：自動判斷使用者輸入是否符合預期格式
+- **友善引導**：當輸入格式不符時，提供明確的範例引導使用者重新輸入
+
+### 技術細節
+- **模型**：使用 `gemini-2.0-flash-exp` 作為主要模型，`gemini-1.5-pro` 作為備用
+- **Prompt Engineering**：使用結構化的 Prompt 模板確保輸出格式一致
+- **錯誤處理**：包含重試機制和超時保護，確保穩定性
+
+> **注意**：如果未設定 `GEMINI_API_KEY`，Bot 仍可運作，但只能使用規則式對話流程，無法理解自然語言或生成詳細行程。
 
 ## 相關文件
 
-- [部署指南](./DEPLOYMENT.md)
-- [測試與設定指南](./TESTING.md)
-- [Phase 3 測試結果](./PHASE3_RESULTS.md)
+- [部署指南](./DEPLOYMENT.md) - 詳細的部署步驟與環境變數設定
+- [LINE Bot 設定指南](./LINE_BOT_SETUP.md) - LINE Bot 串接與 Webhook 設定
 
 ## 授權
 
