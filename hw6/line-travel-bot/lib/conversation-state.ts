@@ -13,13 +13,14 @@ export type ConversationStatus =
   | "COMPLETED";
 
 export async function getOrCreateConversation(lineUserId: string) {
-  // Find active conversation
+  // Find active conversation (not completed)
   let conversation = await prisma.conversation.findFirst({
     where: {
       lineUserId,
       status: { not: "COMPLETED" },
     },
     include: { preference: true },
+    orderBy: { createdAt: 'desc' }, // Get the most recent conversation
   });
 
   if (!conversation) {
@@ -52,6 +53,38 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
 
   if (!preferenceId) {
     throw new Error("Preference record missing for conversation");
+  }
+
+  // Check if this is the first message in the conversation
+  const messageCount = await prisma.message.count({
+    where: { conversationId: conversation.id },
+  });
+
+  // If this is the first message and status is ASK_COUNTRY, send the first question instead of processing the input
+  if (messageCount === 0 && status === "ASK_COUNTRY") {
+    const responseMessages = getResponseMessages("ASK_COUNTRY");
+    
+    // Store Bot Messages
+    for (const msg of responseMessages) {
+      let contentToStore = "";
+      if (msg.type === "text") {
+        contentToStore = msg.text;
+      } else if (msg.type === "template") {
+        contentToStore = `[Template: ${msg.altText}]`;
+      } else {
+        contentToStore = `[${msg.type}]`;
+      }
+
+      await prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          role: "bot",
+          content: contentToStore,
+        },
+      });
+    }
+
+    return responseMessages;
   }
 
   // 1. Store User Message
