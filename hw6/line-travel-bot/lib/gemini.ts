@@ -9,13 +9,14 @@ import {
 } from "./llm-prompts";
 
 // Initialize Gemini API client
-// Note: GEMINI_API_KEY needs to be set in environment variables
 const genAI = process.env.GEMINI_API_KEY
   ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
   : null;
 
-// Use gemini-2.0-flash based on user request (New experimental model)
-const model = genAI ? genAI.getGenerativeModel({ model: "gemini-2.0-flash" }) : null;
+// Models configuration
+// Priority: 1.5-flash (Fastest) -> 2.0-flash (New) -> pro (Stable)
+const PRIMARY_MODEL = "gemini-1.5-flash";
+const BACKUP_MODEL = "gemini-pro"; 
 
 // Helper to clean JSON response from LLM
 function cleanJsonResponse(text: string): string {
@@ -31,26 +32,50 @@ function cleanJsonResponse(text: string): string {
   return cleaned;
 }
 
-// Helper to call Gemini API with retry logic for 503 errors
-async function callGeminiWithRetry(
-  apiCall: () => Promise<any>, 
-  maxRetries = 3, 
-  delayMs = 2000
+// Helper to call Gemini API with retry and fallback logic
+async function callGeminiWithFallback(
+  prompt: string,
+  systemPrompt: string,
+  maxRetries = 2
 ): Promise<any> {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      return await apiCall();
-    } catch (error: any) {
-      const isOverloaded = error.message?.includes('503') || error.status === 503;
-      if (isOverloaded && attempt < maxRetries) {
-        console.warn(`Gemini API overloaded (503). Retrying attempt ${attempt}/${maxRetries} in ${delayMs}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delayMs));
-        // Exponential backoff
-        delayMs *= 2; 
-      } else {
-        throw error;
-      }
+  if (!genAI) throw new Error("Gemini API Key not configured");
+
+  // Try Primary Model first
+  try {
+    console.log(`Attempting to generate with model: ${PRIMARY_MODEL}`);
+    const model = genAI.getGenerativeModel({ model: PRIMARY_MODEL });
+    
+    // Add timeout race to prevent Vercel hard timeout (set to 8s for safety)
+    const result = await Promise.race([
+      model.generateContent({
+        contents: [
+          { role: "user", parts: [{ text: systemPrompt }] },
+          { role: "user", parts: [{ text: prompt }] }
+        ],
+        generationConfig: { responseMimeType: "application/json" }
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 8000))
+    ]) as any;
+
+    return result;
+  } catch (error: any) {
+    console.warn(`Primary model (${PRIMARY_MODEL}) failed:`, error.message || error);
+
+    // If timeout or 404/503, try backup model
+    if (error.message === "Timeout" || error.message?.includes("404") || error.message?.includes("503")) {
+      console.log(`Falling back to backup model: ${BACKUP_MODEL}`);
+      const backupModel = genAI.getGenerativeModel({ model: BACKUP_MODEL });
+      
+      // No timeout race for backup to give it a chance, but Vercel might kill it
+      return await backupModel.generateContent({
+        contents: [
+          { role: "user", parts: [{ text: systemPrompt }] },
+          { role: "user", parts: [{ text: prompt }] }
+        ],
+        generationConfig: { responseMimeType: "application/json" }
+      });
     }
+    throw error;
   }
 }
 
@@ -58,24 +83,11 @@ async function callGeminiWithRetry(
  * 解析使用者輸入，提取旅遊偏好
  */
 export async function extractTravelPreferences(userInput: string, currentContext?: any) {
-  if (!model) {
-    console.warn("Gemini API Key not configured");
-    return null;
-  }
+  if (!genAI) return null;
 
   try {
     const prompt = getExtractionPrompt(userInput, currentContext);
-    
-    const result = await callGeminiWithRetry(() => model.generateContent({
-      contents: [
-        { role: "user", parts: [{ text: EXTRACTION_SYSTEM_PROMPT }] },
-        { role: "user", parts: [{ text: prompt }] }
-      ],
-      generationConfig: {
-        responseMimeType: "application/json",
-      }
-    }));
-
+    const result = await callGeminiWithFallback(prompt, EXTRACTION_SYSTEM_PROMPT);
     const responseText = result.response.text();
     console.log("Gemini extraction raw response:", responseText);
     return JSON.parse(cleanJsonResponse(responseText));
@@ -95,24 +107,11 @@ export async function generateItinerary(preferences: {
   themes?: string;
   month?: string;
 }) {
-  if (!model) {
-    console.warn("Gemini API Key not configured");
-    return null;
-  }
+  if (!genAI) return null;
 
   try {
     const prompt = getGenerationPrompt(preferences);
-    
-    const result = await callGeminiWithRetry(() => model.generateContent({
-      contents: [
-        { role: "user", parts: [{ text: GENERATION_SYSTEM_PROMPT }] },
-        { role: "user", parts: [{ text: prompt }] }
-      ],
-      generationConfig: {
-        responseMimeType: "application/json",
-      }
-    }));
-
+    const result = await callGeminiWithFallback(prompt, GENERATION_SYSTEM_PROMPT);
     const responseText = result.response.text();
     console.log("Gemini generation raw response:", responseText);
     return JSON.parse(cleanJsonResponse(responseText));
@@ -126,24 +125,11 @@ export async function generateItinerary(preferences: {
  * 根據使用者回饋微調行程
  */
 export async function refineItinerary(currentItinerary: any, userFeedback: string) {
-  if (!model) {
-    console.warn("Gemini API Key not configured");
-    return null;
-  }
+  if (!genAI) return null;
 
   try {
     const prompt = getRefinementPrompt(currentItinerary, userFeedback);
-    
-    const result = await callGeminiWithRetry(() => model.generateContent({
-      contents: [
-        { role: "user", parts: [{ text: REFINEMENT_SYSTEM_PROMPT }] },
-        { role: "user", parts: [{ text: prompt }] }
-      ],
-      generationConfig: {
-        responseMimeType: "application/json",
-      }
-    }));
-
+    const result = await callGeminiWithFallback(prompt, REFINEMENT_SYSTEM_PROMPT);
     const responseText = result.response.text();
     return JSON.parse(cleanJsonResponse(responseText));
   } catch (error) {
