@@ -164,16 +164,6 @@ npx prisma studio
 3. 設定環境變數
 4. 部署完成！
 
-## 專案階段
-
-- ✅ **Phase 1-2**: LINE Bot 基礎設定與對話流程
-- ✅ **Phase 3**: 資料庫儲存系統
-- ✅ **Phase 4**: 後台登入與權限管理
-- ✅ **Phase 5**: 對話列表與詳情頁面
-- ✅ **Phase 6**: 搜尋、篩選與數據分析
-- ✅ **Phase 7**: 部署準備與文件撰寫
-- ✅ **Phase 8**: LLM 整合（Gemini API）與智能對話
-
 ## AI 功能說明
 
 本專案整合了 **Google Gemini API**，提供以下智能功能：
