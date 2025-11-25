@@ -766,6 +766,14 @@ export function getFeatureQuickReply() {
         type: "action" as const,
         action: {
           type: "message" as const,
+          label: "重新規劃",
+          text: "重新規劃"
+        }
+      },
+      {
+        type: "action" as const,
+        action: {
+          type: "message" as const,
           label: "查詢偏好",
           text: "查詢偏好"
         }
