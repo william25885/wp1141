@@ -116,15 +116,27 @@ GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 ```
 
-### 可選的環境變數（LINE Bot）
+### 可選的環境變數（LINE Bot 與 LLM）
 
 ```bash
 # LINE Bot（如果不需要 LINE Bot 功能，可以不設定）
 LINE_CHANNEL_ACCESS_TOKEN=your-line-channel-access-token
 LINE_CHANNEL_SECRET=your-line-channel-secret
+
+# Google Generative AI (Gemini API) - 用於智能行程生成與自然語言解析
+# 如果未設定，Bot 將使用規則式流程，無法理解自然語言或生成行程
+GEMINI_API_KEY=your-gemini-api-key
 ```
 
-> **注意**：後台管理功能不需要 LINE Bot 設定即可正常運作。只有在需要使用 LINE Bot 對話功能時才需要設定。
+> **注意**：
+> - 後台管理功能不需要 LINE Bot 設定即可正常運作。只有在需要使用 LINE Bot 對話功能時才需要設定。
+> - 如果未設定 `GEMINI_API_KEY`，Bot 仍可運作，但只能使用規則式對話流程，無法理解自然語言（如「我想去日本五天」）或生成詳細行程。建議設定以啟用完整的 AI 功能。
+
+**如何取得 Gemini API Key**：
+1. 前往 [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. 登入您的 Google 帳號
+3. 點擊 **Create API Key**
+4. 複製產生的 API Key
 
 ## 測試資料
 

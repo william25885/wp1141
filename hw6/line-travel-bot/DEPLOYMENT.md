@@ -90,13 +90,23 @@ GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 ```
 
-#### 可選的環境變數（LINE Bot）：
+#### 可選的環境變數（LINE Bot 與 LLM）：
 
 ```bash
 # LINE Bot（如果不需要 LINE Bot 功能，可以不設定）
 LINE_CHANNEL_ACCESS_TOKEN=your-line-channel-access-token
 LINE_CHANNEL_SECRET=your-line-channel-secret
+
+# Google Generative AI (Gemini API) - 用於智能行程生成與自然語言解析
+# 如果未設定，Bot 將使用規則式流程，無法理解自然語言或生成行程
+GEMINI_API_KEY=your-gemini-api-key
 ```
+
+**如何取得 Gemini API Key**：
+1. 前往 [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. 登入您的 Google 帳號
+3. 點擊 **Create API Key**
+4. 複製產生的 API Key
 
 ### 4.4 資料庫 Schema 同步
 
@@ -173,6 +183,7 @@ npx prisma migrate dev --name init
 - [ ] `GOOGLE_CLIENT_SECRET`
 - [ ] `LINE_CHANNEL_ACCESS_TOKEN`（可選）
 - [ ] `LINE_CHANNEL_SECRET`（可選）
+- [ ] `GEMINI_API_KEY`（可選，但建議設定以啟用 LLM 功能）
 
 ## 後續維護
 
