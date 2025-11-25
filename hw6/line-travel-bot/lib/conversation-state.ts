@@ -538,7 +538,11 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
             if (Array.isArray(itineraryJson.itinerary)) {
               details = itineraryJson.itinerary.map((day: any) => {
                 const activities = Array.isArray(day.activities) 
-                  ? day.activities.map((act: any) => `• ${act.time}: ${act.title}\n  ${act.description}`).join("\n")
+                  ? day.activities.map((act: any) => {
+                      const query = encodeURIComponent(`${finalPref.country} ${act.title}`);
+                      const mapUrl = `https://www.google.com/maps/search/?api=1&query=${query}`;
+                      return `• ${act.time}: ${act.title}\n  ${act.description}\n  🗺️ ${mapUrl}`;
+                    }).join("\n\n")
                   : "";
                 
                 // Collect highlights (e.g., first activity of each day, up to 3)
@@ -550,7 +554,7 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
                   ? `🍽️ 午餐: ${day.meals.lunch}\n🍽️ 晚餐: ${day.meals.dinner}`
                   : "";
 
-                return `📅 Day ${day.day}: ${day.theme}\n${activities}\n${meals}`;
+                return `📅 Day ${day.day}: ${day.theme}\n${activities}\n\n${meals}`;
               }).join("\n\n-------------------\n\n");
             }
 
