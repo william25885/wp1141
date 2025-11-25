@@ -9,14 +9,16 @@ import {
 } from "./llm-prompts";
 
 // Initialize Gemini API client
-const genAI = process.env.GEMINI_API_KEY
-  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-  : null;
+const apiKey = process.env.GEMINI_API_KEY;
+// Log API Key status (safety check)
+console.log("Gemini API Key Status:", apiKey ? `Present (starts with ${apiKey.substring(0, 5)}...)` : "Missing");
+
+const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
 // Models configuration
-// Priority: 1.5-flash (Fastest) -> 2.0-flash (New) -> pro (Stable)
-const PRIMARY_MODEL = "gemini-1.5-flash";
-const BACKUP_MODEL = "gemini-pro"; 
+// Fallback to gemini-pro as primary since flash models are unstable in this region/account
+const PRIMARY_MODEL = "gemini-pro";
+const BACKUP_MODEL = "gemini-1.5-flash"; 
 
 // Helper to clean JSON response from LLM
 function cleanJsonResponse(text: string): string {
@@ -59,10 +61,10 @@ async function callGeminiWithFallback(
 
     return result;
   } catch (error: any) {
-    console.warn(`Primary model (${PRIMARY_MODEL}) failed:`, error.message || error);
+    console.warn(`Primary model (${PRIMARY_MODEL}) failed:`, error);
 
     // If timeout or 404/503, try backup model
-    if (error.message === "Timeout" || error.message?.includes("404") || error.message?.includes("503")) {
+    if (error.message === "Timeout" || error.message?.includes("404") || error.message?.includes("503") || error.message?.includes("Error fetching")) {
       console.log(`Falling back to backup model: ${BACKUP_MODEL}`);
       const backupModel = genAI.getGenerativeModel({ model: BACKUP_MODEL });
       
@@ -91,8 +93,8 @@ export async function extractTravelPreferences(userInput: string, currentContext
     const responseText = result.response.text();
     console.log("Gemini extraction raw response:", responseText);
     return JSON.parse(cleanJsonResponse(responseText));
-  } catch (error) {
-    console.error("Error calling Gemini API (extraction):", error);
+  } catch (error: any) {
+    console.error("Error calling Gemini API (extraction):", error.message, error.stack);
     return null;
   }
 }
@@ -115,8 +117,8 @@ export async function generateItinerary(preferences: {
     const responseText = result.response.text();
     console.log("Gemini generation raw response:", responseText);
     return JSON.parse(cleanJsonResponse(responseText));
-  } catch (error) {
-    console.error("Error calling Gemini API (generation):", error);
+  } catch (error: any) {
+    console.error("Error calling Gemini API (generation):", error.message, error.stack);
     return null;
   }
 }
@@ -132,8 +134,8 @@ export async function refineItinerary(currentItinerary: any, userFeedback: strin
     const result = await callGeminiWithFallback(prompt, REFINEMENT_SYSTEM_PROMPT);
     const responseText = result.response.text();
     return JSON.parse(cleanJsonResponse(responseText));
-  } catch (error) {
-    console.error("Error calling Gemini API (refinement):", error);
+  } catch (error: any) {
+    console.error("Error calling Gemini API (refinement):", error.message, error.stack);
     return null;
   }
 }
