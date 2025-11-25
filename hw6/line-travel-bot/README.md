@@ -58,6 +58,15 @@ hw6/line-travel-bot/
     └── schema.prisma       # 資料庫 Schema
 ```
 
+## 專案連結
+
+### 🌐 後台管理系統
+- **後台網址**：[請填入您的後台網址](https://your-project.vercel.app/admin)
+
+### 🤖 LINE Bot
+- **LINE 好友資訊**：[請填入 LINE Bot 的好友連結或 QR Code](https://line.me/R/ti/p/@your-bot-id)
+  - 掃描 QR Code 或點擊連結即可加入 Bot 為好友
+
 ## 快速開始
 
 ### 前置需求
