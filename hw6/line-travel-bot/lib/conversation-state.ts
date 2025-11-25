@@ -465,6 +465,8 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
   const currentPref = await prisma.travelPreference.findUnique({
     where: { id: preferenceId }
   });
+  
+  console.log("Current Preferences after potential LLM update:", currentPref);
 
   if (currentPref) {
     // Determine the first empty field to ask about
@@ -475,6 +477,8 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
     else if (!currentPref.month) nextStatus = "ASK_MONTH";
     else nextStatus = "READY";
   }
+  
+  console.log(`Status Transition: ${status} -> ${nextStatus}`);
 
   // Fallback: If status didn't change (meaning LLM didn't fill the current field), 
   // use rule-based logic to fill the CURRENT field with the raw text
@@ -536,6 +540,8 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
 
   // Create recommendation if status becomes READY
   if (nextStatus === "READY") {
+    console.log("Status is READY, checking recommendation...");
+    
     // Check if recommendation already exists
     const existingRec = await prisma.travelRecommendation.findFirst({
       where: { conversationId: conversation.id }
@@ -549,13 +555,15 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
       const finalPref = await prisma.travelPreference.findUnique({ 
         where: { id: preferenceId } 
       });
+      
+      console.log("Final Preferences for Generation:", finalPref);
 
-      recommendationContent = "【系統自動生成】正在為您規劃行程... (資料不足)";
+      recommendationContent = "抱歉，行程生成失敗。請稍後再試或重新規劃。";
       let itineraryJson: any = null;
 
       if (finalPref && finalPref.country && finalPref.days) {
         try {
-          console.log("Generating itinerary for:", finalPref);
+          console.log("Calling generateItinerary...");
           itineraryJson = await generateItinerary({
             country: finalPref.country,
             days: finalPref.days,
@@ -563,6 +571,8 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
             themes: finalPref.themes || undefined,
             month: finalPref.month || undefined,
           });
+          
+          console.log("Itinerary Generated:", itineraryJson ? "Success" : "Failed/Null");
 
           if (itineraryJson) {
             // Format JSON to readable text
@@ -607,12 +617,15 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
           } else {
             // Gemini API failed or not configured
             console.error("Itinerary generation failed: itineraryJson is null");
-            recommendationContent = "抱歉，行程生成服務暫時無法使用。請確認已設定 GEMINI_API_KEY 環境變數，或稍後再試。";
+            recommendationContent = "抱歉，行程生成服務暫時無法使用 (API 回傳空值)。請稍後再試。";
           }
         } catch (error) {
           console.error("Itinerary generation failed with error:", error);
-          recommendationContent = "抱歉，行程生成時發生錯誤，請稍後再試。";
+          recommendationContent = "抱歉，行程生成時發生錯誤。請稍後再試。";
         }
+      } else {
+          console.warn("Missing country or days in preferences, cannot generate itinerary.");
+          recommendationContent = "資料不足（缺少國家或天數），無法生成行程。";
       }
 
       await prisma.travelRecommendation.create({
