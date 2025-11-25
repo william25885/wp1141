@@ -448,17 +448,27 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
       if (extracted && Object.keys(extracted).some(k => extracted[k as keyof typeof extracted] !== null)) {
         console.log("Gemini extracted:", extracted);
 
-        // Update preferences in DB
-        await prisma.travelPreference.update({
-          where: { id: preferenceId },
-          data: {
-            ...(extracted.country && { country: extracted.country }),
-            ...(extracted.days && { days: extracted.days }),
-            ...(extracted.budget && { budget: extracted.budget }),
-            ...(extracted.themes && { themes: extracted.themes }),
-            ...(extracted.month && { month: extracted.month }),
-          },
-        });
+        // Validation: Check for invalid/sensitive content in extracted values
+        const invalidContent = ["屁眼", "幹", "屎", "尿", "死", "笨蛋", "白痴", "智障"];
+        const hasInvalidContent = Object.values(extracted).some((val: any) => 
+            typeof val === 'string' && invalidContent.some(bad => val.includes(bad))
+        );
+
+        if (!hasInvalidContent) {
+            // Update preferences in DB only if content is valid
+            await prisma.travelPreference.update({
+              where: { id: preferenceId },
+              data: {
+                ...(extracted.country && { country: extracted.country }),
+                ...(extracted.days && { days: extracted.days }),
+                ...(extracted.budget && { budget: extracted.budget }),
+                ...(extracted.themes && { themes: extracted.themes }),
+                ...(extracted.month && { month: extracted.month }),
+              },
+            });
+        } else {
+            console.warn("Gemini extracted content contains invalid words, skipping update.");
+        }
       }
     } catch (error) {
       console.error("Gemini extraction failed, falling back to rules:", error);
