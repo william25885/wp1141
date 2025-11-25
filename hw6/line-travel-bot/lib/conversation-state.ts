@@ -96,9 +96,34 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
     },
   });
 
-  // Handle Quick Reply menu options and special commands
+  // Handle special commands and feature menu
   // TODO: 未來可整合 Gemini API 來處理這些指令，提供更智能的回應
-  if (text === "旅遊推薦") {
+  if (text === "功能" || text === "選單" || text === "功能列表" || text === "menu") {
+    // Show feature menu
+    const menuMessages = getFeatureMenuMessage();
+    
+    // Store Bot Messages
+    for (const msg of menuMessages) {
+      let contentToStore = "";
+      if (msg.type === "text") {
+        contentToStore = msg.text;
+      } else if (msg.type === "template") {
+        contentToStore = `[Template: ${msg.altText}]`;
+      } else {
+        contentToStore = `[${msg.type}]`;
+      }
+
+      await prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          role: "bot",
+          content: contentToStore,
+        },
+      });
+    }
+
+    return menuMessages;
+  } else if (text === "旅遊推薦") {
     // Start the travel planning flow
     const responseMessages = getResponseMessages("ASK_COUNTRY");
     
@@ -330,8 +355,48 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
 }
 
 /**
+ * 取得功能列表訊息（使用 Button Template）
+ * 適合作為功能選單，使用者可以隨時查看
+ * TODO: 未來可整合 Gemini API 來動態生成更個人化的功能列表
+ */
+export function getFeatureMenuMessage(): Message[] {
+  return [
+    {
+      type: "template",
+      altText: "功能選單",
+      template: {
+        type: "buttons",
+        text: "請選擇功能：",
+        actions: [
+          {
+            type: "message",
+            label: "旅遊推薦",
+            text: "旅遊推薦"
+          },
+          {
+            type: "message",
+            label: "查詢偏好",
+            text: "查詢偏好"
+          },
+          {
+            type: "message",
+            label: "查看上次行程",
+            text: "查看上次行程"
+          },
+          {
+            type: "message",
+            label: "修改偏好",
+            text: "修改偏好"
+          }
+        ]
+      }
+    }
+  ];
+}
+
+/**
  * 取得歡迎訊息（用於使用者加入好友時）
- * 包含功能介紹和使用範例，並提供 Quick Reply 選單
+ * 包含功能介紹和使用範例，並提供功能選單
  * TODO: 未來可整合 Gemini API 來動態生成更個人化的歡迎訊息
  */
 export function getWelcomeMessage(): Message[] {
@@ -339,43 +404,8 @@ export function getWelcomeMessage(): Message[] {
     {
       type: "text",
       text: "嗨~很高興認識你！我是你的AI旅遊規劃助理 🌍\n\n我可以根據你的喜好推薦旅遊國家、景點、每日行程。\n\n你可以跟我說：\n• 我想去日本五天\n• 幫我安排3月的海島行程\n• 推薦歐洲的文化旅遊",
-      quickReply: {
-        items: [
-          {
-            type: "action",
-            action: {
-              type: "message",
-              label: "旅遊推薦",
-              text: "旅遊推薦"
-            }
-          },
-          {
-            type: "action",
-            action: {
-              type: "message",
-              label: "查詢偏好",
-              text: "查詢偏好"
-            }
-          },
-          {
-            type: "action",
-            action: {
-              type: "message",
-              label: "查看上次行程",
-              text: "查看上次行程"
-            }
-          },
-          {
-            type: "action",
-            action: {
-              type: "message",
-              label: "修改偏好",
-              text: "修改偏好"
-            }
-          }
-        ]
-      }
-    }
+    },
+    ...getFeatureMenuMessage()
   ];
 }
 
@@ -435,10 +465,13 @@ export function getResponseMessages(status: ConversationStatus): Message[] {
         text: "預計哪個月份出發呢？\n（例如：3 月、7 月）",
       }];
     case "READY":
-      return [{
-        type: "text",
-        text: "太棒了～我已經獲得你的旅遊需求了！\n我正在幫你規劃專屬行程，請稍候 2 秒",
-      }];
+      return [
+        {
+          type: "text",
+          text: "太棒了～我已經獲得你的旅遊需求了！\n我正在幫你規劃專屬行程，請稍候 2 秒",
+        },
+        ...getFeatureMenuMessage() // 在規劃完成後顯示功能選單
+      ];
     default:
       return [{ type: "text", text: "發生錯誤，請稍後再試。" }];
   }

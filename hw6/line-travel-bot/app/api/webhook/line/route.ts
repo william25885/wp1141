@@ -5,6 +5,7 @@ import {
   getOrCreateConversation, 
   getResponseMessages,
   getWelcomeMessage,
+  getFeatureMenuMessage,
   ConversationStatus 
 } from "@/lib/conversation-state";
 import { WebhookEvent, validateSignature } from "@line/bot-sdk";
