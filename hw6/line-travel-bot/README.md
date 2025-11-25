@@ -51,12 +51,11 @@ hw6/line-travel-bot/
 ├── lib/
 │   ├── prisma.ts           # Prisma Client
 │   ├── line-bot.ts         # LINE Bot Client
-│   └── conversation-state.ts # 對話狀態管理
-├── prisma/
-│   └── schema.prisma       # 資料庫 Schema
-└── scripts/
-    ├── seed-test-data.ts   # 測試資料腳本
-    └── test-phase3.ts     # Phase 3 測試腳本
+│   ├── conversation-state.ts # 對話狀態管理
+│   ├── gemini.ts           # Gemini AI 整合
+│   └── llm-prompts.ts      # LLM Prompt 模板
+└── prisma/
+    └── schema.prisma       # 資料庫 Schema
 ```
 
 ## 快速開始
