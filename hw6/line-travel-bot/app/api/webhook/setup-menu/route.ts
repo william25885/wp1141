@@ -4,6 +4,7 @@ import { messagingApi } from "@line/bot-sdk";
 
 type RichMenuRequest = messagingApi.RichMenuRequest;
 type MessageAction = messagingApi.MessageAction;
+type RichMenuIdResponse = messagingApi.RichMenuIdResponse;
 
 /**
  * 設定 Rich Menu（圖文選單）
@@ -90,7 +91,9 @@ export async function POST(req: Request) {
     };
 
     // 建立 Rich Menu
-    const richMenuId = await lineClient.createRichMenu(richMenu);
+    const richMenuResponse: RichMenuIdResponse = await lineClient.createRichMenu(richMenu);
+    // createRichMenu 返回 RichMenuIdResponse，需要提取 richMenuId
+    const richMenuId = richMenuResponse.richMenuId;
 
     // 設定 Rich Menu 為預設選單（所有使用者都會看到）
     await lineClient.setDefaultRichMenu(richMenuId);
