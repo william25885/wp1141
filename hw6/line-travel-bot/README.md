@@ -2,6 +2,17 @@
 
 一個基於 LINE Bot 的對話式旅遊規劃系統，結合 AI 推薦與後台管理功能。
 
+## 專案連結
+
+### 🌐 後台管理系統
+- **後台網址**：[請填入您的後台網址](https://your-project.vercel.app/admin)
+
+### 🤖 LINE Bot
+- **LINE 好友資訊**：[請填入 LINE Bot 的好友連結或 QR Code](https://line.me/R/ti/p/@your-bot-id)
+  - 掃描 QR Code 或點擊連結即可加入 Bot 為好友
+
+---
+
 ## 專案簡介
 
 LINE Travel Bot 是一個智能旅遊規劃助手，透過 LINE 對話介面收集使用者的旅遊偏好（目的地、天數、預算、主題、月份），並提供個人化的旅遊推薦。同時提供完整的後台管理系統，讓管理員可以查看對話紀錄、分析數據，並管理所有使用者的互動。
@@ -57,15 +68,6 @@ hw6/line-travel-bot/
 └── prisma/
     └── schema.prisma       # 資料庫 Schema
 ```
-
-## 專案連結
-
-### 🌐 後台管理系統
-- **後台網址**：[請填入您的後台網址](https://your-project.vercel.app/admin)
-
-### 🤖 LINE Bot
-- **LINE 好友資訊**：[請填入 LINE Bot 的好友連結或 QR Code](https://line.me/R/ti/p/@your-bot-id)
-  - 掃描 QR Code 或點擊連結即可加入 Bot 為好友
 
 ## 快速開始
 
