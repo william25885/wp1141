@@ -98,29 +98,28 @@ LINE_CHANNEL_ACCESS_TOKEN=your-line-channel-access-token
 LINE_CHANNEL_SECRET=your-line-channel-secret
 ```
 
-### 4.4 執行資料庫遷移
+### 4.4 資料庫 Schema 同步
 
-部署後，需要在 Vercel 的環境中執行 Prisma 遷移：
+**重要**：本專案的 build 腳本已設定為只執行 `prisma generate`，不執行 migration。這是因為：
 
-1. 在 Vercel 專案中，進入 **Settings** > **Functions**
-2. 或使用 Vercel CLI：
+- 如果您的資料庫已經有 schema（例如從本地開發環境建立的），不需要執行 migration
+- Prisma Client 會在 build 時自動生成，確保型別正確
+
+**如果您的資料庫是全新的**，請在部署前先執行：
 
 ```bash
-# 安裝 Vercel CLI
-npm i -g vercel
-
-# 登入
-vercel login
-
-# 連結專案
-vercel link
-
-# 執行遷移（使用 Vercel 的環境變數）
-vercel env pull .env.production
-npx prisma migrate deploy
+# 在本地執行（使用生產環境的 DATABASE_URL）
+npx prisma db push
 ```
 
-或者，您可以在 Vercel 的 **Deployments** 頁面中，點擊部署旁邊的 **...** > **Redeploy**，確保 `package.json` 中的 `build` 腳本包含 `prisma migrate deploy`。
+或者，如果您想使用 migration 系統：
+
+```bash
+# 建立初始 migration
+npx prisma migrate dev --name init
+
+# 然後在 Vercel 部署時，build 腳本會自動執行 migration
+```
 
 ## 步驟 5: 驗證部署
 
