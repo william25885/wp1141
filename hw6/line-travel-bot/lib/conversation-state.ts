@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { messagingApi } from "@line/bot-sdk";
+import { extractTravelPreferences, generateItinerary } from "@/lib/gemini";
 
 type Message = messagingApi.Message;
+type FlexMessage = messagingApi.FlexMessage;
 
 export type ConversationStatus = 
   | "ASK_COUNTRY"
@@ -44,6 +46,150 @@ export async function getOrCreateConversation(lineUserId: string) {
   }
 
   return conversation;
+}
+
+/**
+ * 產生行程摘要的 Flex Message
+ */
+function getItinerarySummaryFlex(
+  title: string, 
+  country: string, 
+  days: string, 
+  highlights: string[]
+): FlexMessage {
+  return {
+    type: "flex",
+    altText: `✨ ${title} 行程摘要`,
+    contents: {
+      type: "bubble",
+      hero: {
+        type: "image",
+        url: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80", // 預設旅遊圖片
+        size: "full",
+        aspectRatio: "20:13",
+        aspectMode: "cover",
+        action: {
+          type: "uri",
+          uri: "https://line.me/"
+        }
+      },
+      body: {
+        type: "box",
+        layout: "vertical",
+        contents: [
+          {
+            type: "text",
+            text: title,
+            weight: "bold",
+            size: "xl",
+            wrap: true
+          },
+          {
+            type: "box",
+            layout: "vertical",
+            margin: "lg",
+            spacing: "sm",
+            contents: [
+              {
+                type: "box",
+                layout: "baseline",
+                spacing: "sm",
+                contents: [
+                  {
+                    type: "text",
+                    text: "📍 地點",
+                    color: "#aaaaaa",
+                    size: "sm",
+                    flex: 1
+                  },
+                  {
+                    type: "text",
+                    text: country,
+                    wrap: true,
+                    color: "#666666",
+                    size: "sm",
+                    flex: 5
+                  }
+                ]
+              },
+              {
+                type: "box",
+                layout: "baseline",
+                spacing: "sm",
+                contents: [
+                  {
+                    type: "text",
+                    text: "📅 天數",
+                    color: "#aaaaaa",
+                    size: "sm",
+                    flex: 1
+                  },
+                  {
+                    type: "text",
+                    text: days,
+                    wrap: true,
+                    color: "#666666",
+                    size: "sm",
+                    flex: 5
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            type: "box",
+            layout: "vertical",
+            margin: "lg",
+            spacing: "sm",
+            contents: [
+              {
+                type: "text",
+                text: "✨ 行程亮點",
+                size: "sm",
+                color: "#aaaaaa"
+              },
+              ...highlights.map(highlight => ({
+                type: "text" as const,
+                text: `• ${highlight}`,
+                wrap: true,
+                color: "#666666",
+                size: "xs",
+                margin: "xs"
+              }))
+            ]
+          }
+        ]
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        contents: [
+          {
+            type: "button",
+            style: "primary",
+            height: "sm",
+            action: {
+              type: "message",
+              label: "查看詳細行程",
+              text: "查看詳細行程"
+            }
+          },
+          {
+            type: "button",
+            style: "secondary",
+            height: "sm",
+            action: {
+              type: "message",
+              label: "重新規劃",
+              text: "重新規劃"
+            }
+          }
+        ],
+        flex: 0
+      }
+    }
+  };
 }
 
 export async function handleUserMessage(lineUserId: string, text: string): Promise<Message[]> {
@@ -251,82 +397,99 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
   // Transition to NEXT status
   let nextStatus: ConversationStatus = status;
   
-  if (status === "ASK_COUNTRY") {
-    await prisma.travelPreference.update({
-      where: { id: preferenceId },
-      data: { country: text },
-    });
-    nextStatus = "ASK_DAYS";
-  } else if (status === "ASK_DAYS") {
-    await prisma.travelPreference.update({
-      where: { id: preferenceId },
-      data: { days: text },
-    });
-    nextStatus = "ASK_BUDGET";
-  } else if (status === "ASK_BUDGET") {
-    await prisma.travelPreference.update({
-      where: { id: preferenceId },
-      data: { budget: text },
-    });
-    nextStatus = "ASK_THEMES";
-  } else if (status === "ASK_THEMES") {
-    await prisma.travelPreference.update({
-      where: { id: preferenceId },
-      data: { themes: text },
-    });
-    nextStatus = "ASK_MONTH";
-  } else if (status === "ASK_MONTH") {
-    await prisma.travelPreference.update({
-      where: { id: preferenceId },
-      data: { month: text },
-    });
-    nextStatus = "READY";
-  } else if (status === "READY" || status === "COMPLETED") {
-     if (text === "重新開始" || text === "重新規劃") {
-         await prisma.conversation.update({
-             where: { id: conversation.id },
-             data: { status: "ASK_COUNTRY" } // Reset to initial status directly
-         });
-         
-         // Create a welcome message with feature introduction and examples
-         const quickReply = getFeatureQuickReply();
-         const welcomeMsg: Message = {
-           type: "text",
-           text: "已為您重置！請告訴我您的新需求 🌍\n\n我可以根據您的喜好推薦旅遊國家、景點、每日行程。\n\n您可以試著說：\n• 我想去日本五天\n• 幫我安排3月的海島行程\n• 推薦歐洲的文化旅遊",
-           quickReply: quickReply
-         };
+  // Attempt to extract preferences using Gemini (if not in READY state)
+  // Only use LLM if we are in a data collection state
+  if (status !== "READY" && status !== "COMPLETED") {
+    try {
+      console.log("Calling Gemini extraction for:", text);
+      const extracted = await extractTravelPreferences(text, { currentStatus: status });
+      
+      if (extracted && Object.keys(extracted).some(k => extracted[k as keyof typeof extracted] !== null)) {
+        console.log("Gemini extracted:", extracted);
 
-         // Store Bot Message
-         await prisma.message.create({
-           data: {
-             conversationId: conversation.id,
-             role: "bot",
-             content: welcomeMsg.text as string,
-           },
-         });
-         
-         return [welcomeMsg];
-     }
-     
-     const quickReply = getFeatureQuickReply();
-     const reply: Message = { 
-        type: "text", 
-        text: "行程規劃中... 如需重新開始請輸入「重新開始」", 
-        quickReply: quickReply 
-      };
-     
-     // Store Bot Message
-      await prisma.message.create({
-        data: {
-          conversationId: conversation.id,
-          role: "bot",
-          content: "行程規劃中... 如需重新開始請輸入「重新開始」",
-        },
-      });
-
-     return [reply];
+        // Update preferences in DB
+        await prisma.travelPreference.update({
+          where: { id: preferenceId },
+          data: {
+            ...(extracted.country && { country: extracted.country }),
+            ...(extracted.days && { days: extracted.days }),
+            ...(extracted.budget && { budget: extracted.budget }),
+            ...(extracted.themes && { themes: extracted.themes }),
+            ...(extracted.month && { month: extracted.month }),
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Gemini extraction failed, falling back to rules:", error);
+    }
   }
 
+  // Determine next status based on current preferences (Auto-skip filled fields)
+  // Refresh preference data to check what's filled
+  const currentPref = await prisma.travelPreference.findUnique({
+    where: { id: preferenceId }
+  });
+
+  if (currentPref) {
+    // Determine the first empty field to ask about
+    if (!currentPref.country) nextStatus = "ASK_COUNTRY";
+    else if (!currentPref.days) nextStatus = "ASK_DAYS";
+    else if (!currentPref.budget) nextStatus = "ASK_BUDGET";
+    else if (!currentPref.themes) nextStatus = "ASK_THEMES";
+    else if (!currentPref.month) nextStatus = "ASK_MONTH";
+    else nextStatus = "READY";
+  }
+
+  // Fallback: If status didn't change (meaning LLM didn't fill the current field), 
+  // use rule-based logic to fill the CURRENT field with the raw text
+  if (nextStatus === status) {
+      if (status === "ASK_COUNTRY") {
+        await prisma.travelPreference.update({
+          where: { id: preferenceId },
+          data: { country: text },
+        });
+        // Re-check status after manual update
+        const updated = await prisma.travelPreference.findUnique({ where: { id: preferenceId } });
+        if (updated?.days) nextStatus = "ASK_BUDGET"; // Skip if next field already filled
+        else nextStatus = "ASK_DAYS";
+      } else if (status === "ASK_DAYS") {
+        await prisma.travelPreference.update({
+          where: { id: preferenceId },
+          data: { days: text },
+        });
+        nextStatus = "ASK_BUDGET";
+      } else if (status === "ASK_BUDGET") {
+        await prisma.travelPreference.update({
+          where: { id: preferenceId },
+          data: { budget: text },
+        });
+        nextStatus = "ASK_THEMES";
+      } else if (status === "ASK_THEMES") {
+        await prisma.travelPreference.update({
+          where: { id: preferenceId },
+          data: { themes: text },
+        });
+        nextStatus = "ASK_MONTH";
+      } else if (status === "ASK_MONTH") {
+        await prisma.travelPreference.update({
+          where: { id: preferenceId },
+          data: { month: text },
+        });
+        nextStatus = "READY";
+      }
+      
+      // Final check to ensure we don't ask for something already filled
+      const finalCheck = await prisma.travelPreference.findUnique({ where: { id: preferenceId } });
+      if (finalCheck) {
+        if (!finalCheck.country) nextStatus = "ASK_COUNTRY";
+        else if (!finalCheck.days) nextStatus = "ASK_DAYS";
+        else if (!finalCheck.budget) nextStatus = "ASK_BUDGET";
+        else if (!finalCheck.themes) nextStatus = "ASK_THEMES";
+        else if (!finalCheck.month) nextStatus = "ASK_MONTH";
+        else nextStatus = "READY";
+      }
+  }
+  
   // Update status in DB if changed
   if (nextStatus !== status) {
     await prisma.conversation.update({
@@ -335,21 +498,124 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
     });
   }
 
-  // Create placeholder recommendation if status becomes READY
+  // Create recommendation if status becomes READY
   if (nextStatus === "READY") {
-    // Check if recommendation already exists to avoid duplicates (though status transition happens once)
+    // Check if recommendation already exists
     const existingRec = await prisma.travelRecommendation.findFirst({
       where: { conversationId: conversation.id }
     });
     
+    let flexMessage: FlexMessage | null = null;
+    
     if (!existingRec) {
+      // Get latest preferences
+      const finalPref = await prisma.travelPreference.findUnique({ 
+        where: { id: preferenceId } 
+      });
+
+      let recommendationContent = "【系統自動生成】正在為您規劃行程... (資料不足)";
+      let itineraryJson: any = null;
+
+      if (finalPref && finalPref.country && finalPref.days) {
+        try {
+          console.log("Generating itinerary for:", finalPref);
+          itineraryJson = await generateItinerary({
+            country: finalPref.country,
+            days: finalPref.days,
+            budget: finalPref.budget || undefined,
+            themes: finalPref.themes || undefined,
+            month: finalPref.month || undefined,
+          });
+
+          if (itineraryJson) {
+            // Format JSON to readable text
+            const title = itineraryJson.title || `${finalPref.country} ${finalPref.days} 之旅`;
+            const overview = itineraryJson.overview || "";
+            
+            let details = "";
+            const highlights: string[] = [];
+
+            if (Array.isArray(itineraryJson.itinerary)) {
+              details = itineraryJson.itinerary.map((day: any) => {
+                const activities = Array.isArray(day.activities) 
+                  ? day.activities.map((act: any) => `• ${act.time}: ${act.title}\n  ${act.description}`).join("\n")
+                  : "";
+                
+                // Collect highlights (e.g., first activity of each day, up to 3)
+                if (highlights.length < 3 && Array.isArray(day.activities) && day.activities.length > 0) {
+                    highlights.push(day.activities[0].title);
+                }
+                
+                const meals = day.meals 
+                  ? `🍽️ 午餐: ${day.meals.lunch}\n🍽️ 晚餐: ${day.meals.dinner}`
+                  : "";
+
+                return `📅 Day ${day.day}: ${day.theme}\n${activities}\n${meals}`;
+              }).join("\n\n-------------------\n\n");
+            }
+
+            recommendationContent = `✨ ${title}\n\n${overview}\n\n${details}\n\n💡 小撇步:\n${Array.isArray(itineraryJson.tips) ? itineraryJson.tips.join("\n• ") : ""}`;
+            
+            // Create Flex Message
+            flexMessage = getItinerarySummaryFlex(
+                title, 
+                finalPref.country, 
+                finalPref.days, 
+                highlights.length > 0 ? highlights : ["精彩行程", "道地美食", "文化體驗"]
+            );
+          }
+        } catch (error) {
+          console.error("Itinerary generation failed:", error);
+          recommendationContent = "抱歉，行程生成時發生錯誤，請稍後再試。";
+        }
+      }
+
       await prisma.travelRecommendation.create({
         data: {
           conversationId: conversation.id,
-          content: "【系統自動生成】正在為您規劃行程... (此為模擬資料，尚未串接 LLM)",
+          content: recommendationContent,
         }
       });
     }
+    
+    // If flex message was created (new itinerary), return it immediately
+    if (flexMessage) {
+        // Store Bot Message (summary)
+        await prisma.message.create({
+            data: {
+                conversationId: conversation.id,
+                role: "bot",
+                content: "[Flex Message] 行程摘要",
+            },
+        });
+        return [flexMessage];
+    }
+  }
+
+  // Handle "Show Details" command
+  if (text === "查看詳細行程") {
+      const rec = await prisma.travelRecommendation.findFirst({
+          where: { conversationId: conversation.id },
+          orderBy: { createdAt: 'desc' }
+      });
+      
+      if (rec) {
+          const quickReply = getFeatureQuickReply();
+          const reply: Message = { 
+              type: "text", 
+              text: rec.content, 
+              quickReply: quickReply 
+          };
+          
+          await prisma.message.create({
+              data: {
+                  conversationId: conversation.id,
+                  role: "bot",
+                  content: rec.content,
+              },
+          });
+          return [reply];
+      }
   }
 
   // Get Bot Response
