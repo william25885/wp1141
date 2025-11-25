@@ -282,24 +282,45 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
     });
     nextStatus = "READY";
   } else if (status === "READY" || status === "COMPLETED") {
-     if (text === "重新開始") {
+     if (text === "重新開始" || text === "重新規劃") {
          await prisma.conversation.update({
              where: { id: conversation.id },
-             data: { status: "COMPLETED" }
+             data: { status: "ASK_COUNTRY" } // Reset to initial status directly
          });
-         // Restart logic by recursion (will create new conversation)
-         return handleUserMessage(lineUserId, text); 
+         
+         // Create a welcome message with feature introduction and examples
+         const quickReply = getFeatureQuickReply();
+         const welcomeMsg: Message = {
+           type: "text",
+           text: "已為您重置！請告訴我您的新需求 🌍\n\n我可以根據您的喜好推薦旅遊國家、景點、每日行程。\n\n您可以試著說：\n• 我想去日本五天\n• 幫我安排3月的海島行程\n• 推薦歐洲的文化旅遊",
+           quickReply: quickReply
+         };
+
+         // Store Bot Message
+         await prisma.message.create({
+           data: {
+             conversationId: conversation.id,
+             role: "bot",
+             content: welcomeMsg.text as string,
+           },
+         });
+         
+         return [welcomeMsg];
      }
      
      const quickReply = getFeatureQuickReply();
-     const reply: Message = { type: "text", text: "行程規劃中... 如需重新開始請輸入「重新開始」", quickReply: quickReply };
+     const reply: Message = { 
+        type: "text", 
+        text: "行程規劃中... 如需重新開始請輸入「重新開始」", 
+        quickReply: quickReply 
+      };
      
      // Store Bot Message
       await prisma.message.create({
         data: {
           conversationId: conversation.id,
           role: "bot",
-          content: reply.text as string,
+          content: "行程規劃中... 如需重新開始請輸入「重新開始」",
         },
       });
 
