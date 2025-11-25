@@ -904,6 +904,54 @@ export function getResponseMessages(status: ConversationStatus): Message[] {
                   label: "文化/博物館",
                   text: "文化/博物館"
                 }
+              },
+              {
+                type: "action",
+                action: {
+                  type: "message",
+                  label: "歷史古蹟",
+                  text: "歷史古蹟"
+                }
+              },
+              {
+                type: "action",
+                action: {
+                  type: "message",
+                  label: "冒險活動",
+                  text: "冒險活動"
+                }
+              },
+              {
+                type: "action",
+                action: {
+                  type: "message",
+                  label: "親子同樂",
+                  text: "親子同樂"
+                }
+              },
+              {
+                type: "action",
+                action: {
+                  type: "message",
+                  label: "攝影打卡",
+                  text: "攝影打卡"
+                }
+              },
+              {
+                type: "action",
+                action: {
+                  type: "message",
+                  label: "溫泉泡湯",
+                  text: "溫泉泡湯"
+                }
+              },
+              {
+                type: "action",
+                action: {
+                  type: "message",
+                  label: "重新規劃",
+                  text: "重新規劃"
+                }
               }
             ]
           }
