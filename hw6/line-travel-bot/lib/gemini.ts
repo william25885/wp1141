@@ -43,7 +43,7 @@ async function callGeminiWithFallback(
     console.log(`Attempting to generate with model: ${PRIMARY_MODEL}`);
     const model = genAI.getGenerativeModel({ model: PRIMARY_MODEL });
     
-    // Add timeout race (9s)
+    // Add timeout race (25s)
     const result = await Promise.race([
       model.generateContent({
         contents: [
@@ -52,7 +52,7 @@ async function callGeminiWithFallback(
         ],
         generationConfig: { responseMimeType: "application/json" }
       }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 9000))
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 25000))
     ]) as any;
 
     return result;

@@ -73,13 +73,13 @@ export const GENERATION_SYSTEM_PROMPT = `
 行程要求：
 1. 實際可行，路線順暢。
 2. 符合使用者的主題（如美食、購物）與預算。
-3. 每日包含 3-4 個主要景點與推薦餐飲。
+3. 每日包含 2-3 個主要景點與推薦餐飲。
 4. 景點名稱請提供適合 Google Maps 搜尋的關鍵字。
 
 輸出格式 (JSON Schema):
 {
-  "title": "行程標題 (例如：京都5日深度文化之旅)",
-  "overview": "行程簡介 (50字以內)",
+  "title": "行程標題",
+  "overview": "行程簡介 (30字以內)",
   "itinerary": [
     {
       "day": 1,
@@ -88,7 +88,7 @@ export const GENERATION_SYSTEM_PROMPT = `
         {
           "time": "上午/下午/晚上",
           "title": "景點名稱",
-          "description": "簡短介紹"
+          "description": "簡短介紹 (20字內)"
         }
       ],
       "meals": {
