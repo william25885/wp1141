@@ -446,20 +446,45 @@ export async function handleUserMessage(lineUserId: string, text: string, timest
       console.log("Calling Gemini extraction for:", text);
       const extracted = await extractTravelPreferences(text, { currentStatus: status });
       
-      if (extracted && Object.keys(extracted).some(k => extracted[k as keyof typeof extracted] !== null)) {
-        console.log("Gemini extracted:", extracted);
+      if (extracted) {
+          // 1. Check if input is INVALID based on Gemini's judgment
+          if (extracted.isValid === false && extracted.suggestedReply) {
+              console.log("Gemini judged input as invalid:", extracted.suggestedReply);
+              
+              const quickReply = getFeatureQuickReply();
+              const reply: Message = {
+                  type: "text",
+                  text: extracted.suggestedReply,
+                  quickReply: quickReply
+              };
+              
+              await prisma.message.create({
+                data: {
+                  conversationId: conversation.id,
+                  role: "bot",
+                  content: reply.text as string,
+                },
+              });
+              
+              return [reply];
+          }
 
-        // Update preferences in DB
-        await prisma.travelPreference.update({
-          where: { id: preferenceId },
-          data: {
-            ...(extracted.country && { country: extracted.country }),
-            ...(extracted.days && { days: extracted.days }),
-            ...(extracted.budget && { budget: extracted.budget }),
-            ...(extracted.themes && { themes: extracted.themes }),
-            ...(extracted.month && { month: extracted.month }),
-          },
-        });
+          // 2. If valid, proceed to update preferences
+          if (Object.keys(extracted).some(k => k !== "isValid" && k !== "suggestedReply" && k !== "intent" && extracted[k as keyof typeof extracted] !== null)) {
+            console.log("Gemini extracted:", extracted);
+
+            // Update preferences in DB
+            await prisma.travelPreference.update({
+              where: { id: preferenceId },
+              data: {
+                ...(extracted.country && { country: extracted.country }),
+                ...(extracted.days && { days: extracted.days }),
+                ...(extracted.budget && { budget: extracted.budget }),
+                ...(extracted.themes && { themes: extracted.themes }),
+                ...(extracted.month && { month: extracted.month }),
+              },
+            });
+          }
       }
     } catch (error) {
       console.error("Gemini extraction failed, falling back to rules:", error);
