@@ -42,7 +42,7 @@ export async function POST(req: Request) {
       if (event.type === "message" && event.message.type === "text") {
         const userId = event.source.userId;
         if (userId) {
-          const messages = await handleUserMessage(userId, event.message.text);
+          const messages = await handleUserMessage(userId, event.message.text, event.timestamp);
           if (messages.length > 0 && lineClient) {
             await lineClient.replyMessage({
               replyToken: event.replyToken,

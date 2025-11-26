@@ -192,7 +192,7 @@ function getItinerarySummaryFlex(
   };
 }
 
-export async function handleUserMessage(lineUserId: string, text: string): Promise<Message[]> {
+export async function handleUserMessage(lineUserId: string, text: string, timestamp?: number): Promise<Message[]> {
   const conversation = await getOrCreateConversation(lineUserId);
   const status = conversation.status as ConversationStatus;
   const preferenceId = conversation.preference?.id;
@@ -239,6 +239,7 @@ export async function handleUserMessage(lineUserId: string, text: string): Promi
       conversationId: conversation.id,
       role: "user",
       content: text,
+      createdAt: timestamp ? new Date(timestamp) : undefined,
     },
   });
 
