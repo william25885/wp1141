@@ -77,7 +77,7 @@ export default async function ConversationsPage({ searchParams }: PageProps) {
                     </div>
                     <div className="ml-2 flex-shrink-0 flex">
                        <p className="text-xs text-gray-500">
-                        {new Date(conv.updatedAt).toLocaleString('zh-TW')}
+                        {new Date(conv.updatedAt).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}
                       </p>
                     </div>
                   </div>

@@ -59,8 +59,8 @@ export default async function ConversationDetailPage({ params }: PageProps) {
               <h3 className="text-base font-semibold leading-6 text-gray-900">狀態資訊</h3>
               <div className="mt-2 max-w-xl text-sm text-gray-500">
                 <p>目前狀態: <span className="font-medium text-gray-900">{conversation.status}</span></p>
-                <p>建立時間: {new Date(conversation.createdAt).toLocaleString('zh-TW')}</p>
-                <p>最後更新: {new Date(conversation.updatedAt).toLocaleString('zh-TW')}</p>
+                <p>建立時間: {new Date(conversation.createdAt).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}</p>
+                <p>最後更新: {new Date(conversation.updatedAt).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}</p>
               </div>
             </div>
           </div>
@@ -107,7 +107,7 @@ export default async function ConversationDetailPage({ params }: PageProps) {
                   {conversation.recommendations.map(rec => (
                     <div key={rec.id} className="border-l-4 border-green-400 pl-4">
                       <p className="whitespace-pre-wrap break-words min-w-0">{rec.content}</p>
-                      <p className="mt-1 text-xs text-gray-400">{new Date(rec.createdAt).toLocaleString('zh-TW')}</p>
+                      <p className="mt-1 text-xs text-gray-400">{new Date(rec.createdAt).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}</p>
                     </div>
                   ))}
                 </div>
@@ -138,7 +138,7 @@ export default async function ConversationDetailPage({ params }: PageProps) {
                     >
                       <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
                       <p className={`text-xs mt-1 ${msg.role === 'user' ? 'text-blue-200' : 'text-gray-400'}`}>
-                        {new Date(msg.createdAt).toLocaleString('zh-TW')}
+                        {new Date(msg.createdAt).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}
                       </p>
                     </div>
                   </div>
