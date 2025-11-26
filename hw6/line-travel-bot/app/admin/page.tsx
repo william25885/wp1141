@@ -73,7 +73,7 @@ export default async function AdminDashboard() {
                   </div>
                   <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
                     <p>
-                      更新於 {new Date(conv.updatedAt).toLocaleString('zh-TW')}
+                      更新於 {new Date(conv.updatedAt).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}
                     </p>
                   </div>
                 </div>
