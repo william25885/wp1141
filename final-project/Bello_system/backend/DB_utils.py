@@ -1386,8 +1386,9 @@ class DatabaseManager:
     def get_friends_list(self, user_id):
         """獲取好友列表（包含在線狀態）"""
         try:
+            # 使用 DISTINCT 避免雙向記錄造成的重複
             query = """
-                SELECT 
+                SELECT DISTINCT
                     u."User_id",
                     u."User_name",
                     u."User_nickname",
@@ -1401,7 +1402,7 @@ class DatabaseManager:
                 LEFT JOIN "USER_ONLINE_STATUS" os ON u."User_id" = os."User_id"
                 WHERE f."Status" = 'accepted'
                 AND u."User_id" != %s
-                ORDER BY os."Is_online" DESC, u."User_name" ASC
+                ORDER BY is_online DESC, u."User_name" ASC
             """
             result = self.execute_query(query, (user_id, user_id, user_id))
             
