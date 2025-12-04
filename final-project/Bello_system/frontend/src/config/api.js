@@ -22,12 +22,20 @@ export const apiUrl = (endpoint) => {
   // 移除開頭的斜線（如果有的話）
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint
   
-  // 如果 API_BASE_URL 是相對路徑，直接拼接
+  // 如果 API_BASE_URL 是相對路徑（生產環境）
   if (API_BASE_URL.startsWith('/')) {
-    return `/${cleanEndpoint}`
+    // 確保有 /api 前綴
+    if (cleanEndpoint.startsWith('api/')) {
+      return `/${cleanEndpoint}`
+    }
+    return `/api/${cleanEndpoint}`
   }
   
-  // 否則拼接完整 URL
-  return `${API_BASE_URL}/${cleanEndpoint}`
+  // 開發環境：API_BASE_URL 是完整 URL（如 http://localhost:8800）
+  // 需要添加 /api 前綴
+  if (cleanEndpoint.startsWith('api/')) {
+    return `${API_BASE_URL}/${cleanEndpoint}`
+  }
+  return `${API_BASE_URL}/api/${cleanEndpoint}`
 }
 
