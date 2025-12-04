@@ -201,8 +201,8 @@ export default {
     showUserProfile(message) {
       this.selectedUser = {
         user_id: message.sender_id,
-        user_name: message.sender_name,
-        user_nickname: message.sender_name
+        user_name: message.sender_real_name || message.sender_name,
+        user_nickname: message.sender_nickname || message.sender_name
       }
       this.showProfilePopup = true
     },

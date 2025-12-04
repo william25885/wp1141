@@ -1075,7 +1075,9 @@ class DatabaseManager:
             SELECT 
                 mm."Meeting_id",
                 mm."Sender_id",
+                COALESCE(u."User_nickname", u."User_name") as display_name,
                 u."User_name",
+                u."User_nickname",
                 mm."Content",
                 mm."Sending_time"
             FROM "CHATTING_ROOM" mm
@@ -1093,9 +1095,11 @@ class DatabaseManager:
                     {
                         "meeting_id": row[0],
                         "sender_id": row[1],
-                        "sender_name": row[2],
-                        "content": row[3],
-                        "timestamp": row[4].strftime("%Y-%m-%d %H:%M:%S"),
+                        "sender_name": row[2],  # 顯示名稱（優先暱稱）
+                        "sender_real_name": row[3],  # 真實姓名
+                        "sender_nickname": row[4],  # 暱稱
+                        "content": row[5],
+                        "timestamp": row[6].strftime("%Y-%m-%d %H:%M:%S"),
                     }
                 )
             return messages
