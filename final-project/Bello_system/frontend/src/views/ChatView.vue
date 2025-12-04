@@ -397,6 +397,23 @@ export default {
             const timeB = b.last_message_time ? new Date(b.last_message_time).getTime() : 0
             return timeB - timeA
           })
+          
+          // 如果當前選中的好友不在列表中（還沒有聊天記錄），保留它
+          if (this.selectedUserId) {
+            const selectedChatExists = sortedChats.some(
+              chat => chat.other_user_id === this.selectedUserId
+            )
+            if (!selectedChatExists) {
+              // 從當前 chatList 中找到選中的聊天並保留
+              const currentSelectedChat = this.chatList.find(
+                chat => chat.other_user_id === this.selectedUserId
+              )
+              if (currentSelectedChat) {
+                sortedChats.unshift(currentSelectedChat)
+              }
+            }
+          }
+          
           this.chatList = sortedChats
         }
       } catch (error) {
@@ -452,12 +469,21 @@ export default {
       if (this.pollingInterval) {
         clearInterval(this.pollingInterval)
       }
-      this.pollingInterval = setInterval(async () => {
-        await Promise.all([
+      // 延遲第一次調用，避免立即覆蓋新添加的聊天
+      setTimeout(() => {
+        // 立即執行一次
+        Promise.all([
           this.loadChatList(),
           this.loadChatHistory()
         ])
-      }, 1000)
+        // 然後開始定期輪詢
+        this.pollingInterval = setInterval(async () => {
+          await Promise.all([
+            this.loadChatList(),
+            this.loadChatHistory()
+          ])
+        }, 1000)
+      }, 500)
     },
     
     async sendMessage() {
