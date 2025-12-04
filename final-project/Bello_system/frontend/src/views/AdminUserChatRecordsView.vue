@@ -61,7 +61,7 @@
 </template>
 
 <script>
-import { apiUrl } from '@/config/api'
+import { apiGet, apiPost } from '@/utils/api'
 
 export default {
   name: 'AdminUserChatRecords',
@@ -81,8 +81,7 @@ export default {
       }
 
       try {
-        const response = await fetch(apiUrl(`admin/chat-partners/${this.searchUserId}`))
-        const data = await response.json()
+        const data = await apiGet(`admin/chat-partners/${this.searchUserId}`)
         
         if (data.status === 'success') {
           this.chatPartners = data.partners
@@ -92,25 +91,22 @@ export default {
         }
       } catch (error) {
         console.error('Error searching user chats:', error)
-        alert('查詢失敗')
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login')
+        } else {
+          alert('查詢失敗')
+        }
       }
     },
 
     async viewChatHistory(partnerId) {
       try {
-        const response = await fetch(apiUrl('admin/chat-history'), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            user1_id: this.searchUserId,
-            user2_id: partnerId,
-            limit: 20
-          })
+        const data = await apiPost('admin/chat-history', {
+          user1_id: this.searchUserId,
+          user2_id: partnerId,
+          limit: 20
         })
         
-        const data = await response.json()
         if (data.status === 'success') {
           this.chatHistory = data.messages
           this.selectedPartnerId = partnerId
@@ -119,7 +115,11 @@ export default {
         }
       } catch (error) {
         console.error('Error fetching chat history:', error)
-        alert('獲取聊天記錄失敗')
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login')
+        } else {
+          alert('獲取聊天記錄失敗')
+        }
       }
     },
 

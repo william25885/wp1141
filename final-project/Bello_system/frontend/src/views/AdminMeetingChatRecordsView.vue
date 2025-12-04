@@ -62,7 +62,7 @@
 </template>
 
 <script>
-import { apiUrl } from '@/config/api'
+import { apiGet } from '@/utils/api'
 
 export default {
   name: 'AdminMeetingChatRecords',
@@ -82,8 +82,7 @@ export default {
       }
 
       try {
-        const response = await fetch(apiUrl(`admin/meeting-chat/${this.searchMeetingId}`))
-        const data = await response.json()
+        const data = await apiGet(`admin/meeting-chat/${this.searchMeetingId}`)
         
         if (data.status === 'success') {
           this.meetingInfo = data.meeting_info
@@ -94,7 +93,11 @@ export default {
         }
       } catch (error) {
         console.error('Error searching meeting chats:', error)
-        alert('查詢失敗')
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login')
+        } else {
+          alert('查詢失敗')
+        }
       }
     },
 

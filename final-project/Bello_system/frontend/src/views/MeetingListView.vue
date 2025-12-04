@@ -18,7 +18,7 @@
 
 <script>
 import UserMeetingCard from '@/components/UserMeetingCard.vue'
-import { apiUrl } from '@/config/api'
+import { getUser, apiGet, apiPost } from '@/utils/api'
 
 export default {
   name: 'MeetingListView',
@@ -51,29 +51,26 @@ export default {
     },
     async fetchMeetings() {
       try {
-        const user = JSON.parse(localStorage.getItem('user'))
+        const user = getUser()
         if (!user || !user.user_id) {
           this.$router.push('/login')
           return
         }
         
-        const response = await fetch(apiUrl(`list-meeting?user_id=${user.user_id}`))
-        const text = await response.text()
-        
-        try {
-          const data = JSON.parse(text)
-          if (data.status === 'success') {
-            this.meetings = data.meetings.map(meeting => this.formatMeetingData(meeting))
-          } else {
-            alert(data.message)
-          }
-        } catch (parseError) {
-          console.error('JSON parsing error:', parseError)
-          alert('數據格式錯誤')
+        // 使用 apiGet 自動添加 token，後端會從 token 獲取 user_id
+        const data = await apiGet('list-meeting')
+        if (data.status === 'success') {
+          this.meetings = data.meetings.map(meeting => this.formatMeetingData(meeting))
+        } else {
+          alert(data.message || '獲取聚會列表失敗')
         }
       } catch (error) {
         console.error('Error fetching meetings:', error)
-        alert('獲取聚會列表失敗')
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login')
+        } else {
+          alert('獲取聚會列表失敗')
+        }
       }
     },
     async handleJoinMeeting(meetingId) {
@@ -85,26 +82,11 @@ export default {
       }
       
       try {
-        const user = JSON.parse(localStorage.getItem('user'))
-        console.log('Current user:', user);
-        if (!user || !user.user_id) {
-          alert('請先登入')
-          this.$router.push('/login')
-          return
-        }
-
-        const response = await fetch(apiUrl('join-meeting'), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            meeting_id: meetingId,
-            user_id: user.user_id
-          })
+        // 使用 apiPost 自動添加 token，不需要傳 user_id（後端會從 token 獲取）
+        const data = await apiPost('join-meeting', {
+          meeting_id: meetingId
         })
 
-        const data = await response.json()
         if (data.status === 'success') {
           alert('成功加入聚會！')
           this.fetchMeetings()
@@ -113,7 +95,11 @@ export default {
         }
       } catch (error) {
         console.error('Error joining meeting:', error)
-        alert('加入聚會失敗，請稍後再試')
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login')
+        } else {
+          alert('加入聚會失敗，請稍後再試')
+        }
       }
     }
   },

@@ -91,7 +91,7 @@
 </template>
 
 <script>
-import { apiUrl } from '@/config/api'
+import { getUser, apiGet, apiPost } from '@/utils/api'
 
 export default {
   name: 'ProfileView',
@@ -157,26 +157,30 @@ export default {
     },
     async fetchUserData() {
       try {
-        const user = JSON.parse(localStorage.getItem('user'));
+        const user = getUser();
         
         if (!user || !user.user_id) {
           this.$router.push('/login');
           return;
         }
 
-        const response = await fetch(apiUrl(`user-profile/${user.user_id}`));
-        console.log(response)
-        const data = await response.json();
+        // 使用 apiGet，後端會從 token 獲取 user_id
+        const data = await apiGet(`user-profile/${user.user_id}`);
         console.log(data)
         if (data.status === 'success') {
           this.userData = data.basic_info;
           this.profileData = data.profile_info;
+          await this.fetchSnsAccounts();
         } else {
-          alert(data.message);
+          alert(data.message || '獲取用戶資料失敗');
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
-        alert('獲取用戶資料失敗');
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login');
+        } else {
+          alert('獲取用戶資料失敗');
+        }
       }
     },
     async addSnsAccount() {
@@ -186,76 +190,70 @@ export default {
       }
 
       try {
-        const user = JSON.parse(localStorage.getItem('user'));
-        const response = await fetch(apiUrl('add-sns'), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: user.user_id,
-            platform: this.selectedPlatform,
-            sns_id: this.snsId
-          })
+        // 使用 apiPost，後端會從 token 獲取 user_id
+        const data = await apiPost('add-sns', {
+          platform: this.selectedPlatform,
+          sns_id: this.snsId
         });
 
-        const data = await response.json();
         if (data.status === 'success') {
           await this.fetchSnsAccounts();
           this.selectedPlatform = '';
           this.snsId = '';
         } else {
-          alert(data.message);
+          alert(data.message || '新增社交媒體帳號失敗');
         }
       } catch (error) {
         console.error('Error adding SNS account:', error);
-        alert('新增社交媒體帳號失敗');
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login');
+        } else {
+          alert('新增社交媒體帳號失敗');
+        }
       }
     },
 
     async fetchSnsAccounts() {
       try {
-        const user = JSON.parse(localStorage.getItem('user'));
-        const response = await fetch(apiUrl(`sns-accounts/${user.user_id}`));
-        const data = await response.json();
+        const user = getUser();
+        // 使用 apiGet，後端會從 token 獲取 user_id
+        const data = await apiGet(`sns-accounts/${user.user_id}`);
         
         if (data.status === 'success') {
           this.snsAccounts = data.sns_accounts;
         }
       } catch (error) {
         console.error('Error fetching SNS accounts:', error);
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login');
+        }
       }
     },
 
     async removeSnsAccount(platform) {
       try {
-        const user = JSON.parse(localStorage.getItem('user'));
-        const response = await fetch(apiUrl('remove-sns'), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: user.user_id,
-            platform: platform
-          })
+        // 使用 apiPost，後端會從 token 獲取 user_id
+        const data = await apiPost('remove-sns', {
+          platform: platform
         });
 
-        const data = await response.json();
         if (data.status === 'success') {
           await this.fetchSnsAccounts();
         } else {
-          alert(data.message);
+          alert(data.message || '刪除社交媒體帳號失敗');
         }
       } catch (error) {
         console.error('Error removing SNS account:', error);
-        alert('刪除社交媒體帳號失敗');
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login');
+        } else {
+          alert('刪除社交媒體帳號失敗');
+        }
       }
     },
 
     async updateProfile() {
       try {
-        const user = JSON.parse(localStorage.getItem('user'));
         const updates = [];
         
         // 將 profileData 轉換為 updates 陣列
@@ -265,29 +263,26 @@ export default {
           }
         }
 
-        const response = await fetch(apiUrl('update-profile'), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: user.user_id,
-            updates: updates
-          })
+        // 使用 apiPost，後端會從 token 獲取 user_id
+        const data = await apiPost('update-profile', {
+          updates: updates
         });
 
-        const data = await response.json();
         if (data.status === 'success') {
           alert('更新成功！');
           if (this.profileData.Sns === 'YES') {
             this.fetchUserData();
           }
         } else {
-          alert(data.message);
+          alert(data.message || '更新資料失敗');
         }
       } catch (error) {
         console.error('Error updating profile:', error);
-        alert('更新資料失敗');
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login');
+        } else {
+          alert('更新資料失敗');
+        }
       }
     }
   },

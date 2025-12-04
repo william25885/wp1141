@@ -115,7 +115,7 @@
 </template>
 
 <script>
-import { apiUrl } from '@/config/api'
+import { getUser, apiGet, apiPost } from '@/utils/api'
 
 function debounce(fn, delay) {
   let timeout
@@ -141,7 +141,7 @@ export default {
     }
   },
   async created() {
-    const user = JSON.parse(localStorage.getItem('user'))
+    const user = getUser()
     if (!user || !user.user_id) {
       this.$router.push('/login')
       return
@@ -152,8 +152,8 @@ export default {
   methods: {
     async loadChatList() {
       try {
-        const response = await fetch(apiUrl(`my-chats/${this.currentUserId}`))
-        const data = await response.json()
+        // 使用 apiGet，後端會從 token 獲取 user_id
+        const data = await apiGet('my-chats')
         if (data.status === 'success') {
           // 根據最後消息時間排序
           const sortedChats = data.chats.sort((a, b) => {
@@ -174,6 +174,9 @@ export default {
         }
       } catch (error) {
         console.error('Error loading chat list:', error)
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login')
+        }
       }
     },
     async selectChat(userId) {
@@ -182,16 +185,13 @@ export default {
       this.startPolling()
     },
     async loadChatHistory() {
+      if (!this.selectedUserId) return
+      
       try {
-        const response = await fetch(apiUrl('private-chat/history'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            user1_id: this.currentUserId,
-            user2_id: this.selectedUserId
-          })
+        // 使用 apiPost，後端會從 token 獲取 user1_id，只需要傳 user2_id
+        const data = await apiPost('private-chat/history', {
+          user2_id: this.selectedUserId
         })
-        const data = await response.json()
         if (data.status === 'success') {
           this.chatHistory = data.messages
           this.$nextTick(() => {
@@ -200,6 +200,9 @@ export default {
         }
       } catch (error) {
         console.error('Error loading chat history:', error)
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login')
+        }
       }
     },
     startPolling() {
@@ -218,16 +221,11 @@ export default {
       if (!this.newMessage.trim()) return
       
       try {
-        const response = await fetch(apiUrl('private-chat/send'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sender_id: this.currentUserId,
-            receiver_id: this.selectedUserId,
-            content: this.newMessage
-          })
+        // 使用 apiPost，後端會從 token 獲取 sender_id，只需要傳 receiver_id 和 content
+        const data = await apiPost('private-chat/send', {
+          receiver_id: this.selectedUserId,
+          content: this.newMessage
         })
-        const data = await response.json()
         if (data.status === 'success') {
           this.newMessage = ''
           await this.loadChatHistory()
@@ -241,6 +239,9 @@ export default {
         }
       } catch (error) {
         console.error('Error sending message:', error)
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login')
+        }
       }
     },
     async startNewChat(user) {
@@ -284,15 +285,16 @@ export default {
       }
       
       try {
-        const response = await fetch(
-          apiUrl(`search-users?query=${this.searchQuery}&current_user=${this.currentUserId}`)
-        );
-        const data = await response.json();
+        // 使用 apiGet，後端會從 token 獲取 current_user
+        const data = await apiGet(`search-users?query=${encodeURIComponent(this.searchQuery)}`);
         if (data.status === 'success') {
           this.filteredUsers = data.users;
         }
       } catch (error) {
         console.error('Error searching users:', error);
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login')
+        }
       }
     }, 300),
     closeUserSearch() {

@@ -4,17 +4,14 @@ from jwt_utils import require_auth
 
 private_chat = Blueprint("private_chat", __name__)
 
-@private_chat.route('/my-chats/<user_id>', methods=['GET', 'OPTIONS'])
+@private_chat.route('/my-chats', methods=['GET', 'OPTIONS'])
 @require_auth
-def get_chat_list(user_id):
-    # 驗證請求的 user_id 與 token 中的 user_id 一致
-    if request.current_user['user_id'] != int(user_id):
-        return jsonify({
-            'status': 'error',
-            'message': '無權限訪問'
-        }), 403
+def get_chat_list():
     if request.method == 'OPTIONS':
         return '', 204
+    
+    # 從 JWT token 獲取 user_id
+    user_id = request.current_user['user_id']
         
     try:
         db = DatabaseManager()
@@ -47,21 +44,13 @@ def get_chat_history():
     try:
         data = request.get_json()
         # 從 JWT token 獲取當前用戶 ID
-        current_user_id = request.current_user['user_id']
-        user1_id = data.get('user1_id')
+        user1_id = request.current_user['user_id']
         user2_id = data.get('user2_id')
         
-        # 驗證當前用戶是聊天的一方
-        if current_user_id not in [user1_id, user2_id]:
+        if not user2_id:
             return jsonify({
                 'status': 'error',
-                'message': '無權限訪問此聊天記錄'
-            }), 403
-        
-        if not all([user1_id, user2_id]):
-            return jsonify({
-                'status': 'error',
-                'message': '缺少必要參數'
+                'message': '缺少必要參數 user2_id'
             }), 400
             
         db = DatabaseManager()
@@ -119,17 +108,14 @@ def send_private_message():
             'message': str(e)
         }), 500
 
-@private_chat.route('/available-chat-users/<user_id>', methods=['GET', 'OPTIONS'])
+@private_chat.route('/available-chat-users', methods=['GET', 'OPTIONS'])
 @require_auth
-def get_available_users(user_id):
-    # 驗證請求的 user_id 與 token 中的 user_id 一致
-    if request.current_user['user_id'] != int(user_id):
-        return jsonify({
-            'status': 'error',
-            'message': '無權限訪問'
-        }), 403
+def get_available_users():
     if request.method == 'OPTIONS':
         return '', 204
+    
+    # 從 JWT token 獲取 user_id
+    user_id = request.current_user['user_id']
         
     try:
         db = DatabaseManager()

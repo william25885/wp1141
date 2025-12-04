@@ -52,6 +52,8 @@
 </template>
 
 <script>
+import { getUser } from '@/utils/api'
+
 export default {
   name: 'UserMeetingCard',
   props: {
@@ -101,7 +103,7 @@ export default {
     handleJoinMeeting() {
       console.log('UserMeetingCard - Meeting data:', this.meeting);
       console.log('UserMeetingCard - Meeting ID:', this.meeting.meeting_id);
-      const user = JSON.parse(localStorage.getItem('user'))
+      const user = getUser()
       if (!user || !user.user_id) {
         alert('請先登入')
         this.$router.push('/login')

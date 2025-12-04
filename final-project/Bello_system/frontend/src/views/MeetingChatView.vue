@@ -72,7 +72,7 @@
 </template>
 
 <script>
-import { apiUrl } from '@/config/api'
+import { getUser, apiGet, apiPost } from '@/utils/api'
 
 export default {
   name: 'MeetingChatView',
@@ -88,7 +88,7 @@ export default {
   },
   methods: {
     async fetchMyMeetings() {
-      const user = JSON.parse(localStorage.getItem('user'))
+      const user = getUser()
       if (!user) {
         this.$router.push('/login')
         return
@@ -96,14 +96,17 @@ export default {
       this.currentUserId = user.user_id
       
       try {
-        const response = await fetch(apiUrl(`my-meetings/${user.user_id}`))
-        const data = await response.json()
+        // 使用 apiGet，後端會從 token 獲取 user_id
+        const data = await apiGet(`my-meetings/${user.user_id}`)
         console.log(data)
         if (data.status === 'success') {
           this.myMeetings = data.meetings.ongoing || []
         }
       } catch (error) {
         console.error('Error fetching meetings:', error)
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login')
+        }
       }
     },
     
@@ -123,9 +126,11 @@ export default {
     },
     
     async loadChatHistory() {
+      if (!this.selectedMeeting) return
+      
       try {
-        const response = await fetch(apiUrl(`meeting-chat/${this.selectedMeeting.meeting_id}`))
-        const data = await response.json()
+        // 使用 apiGet，自動添加 token
+        const data = await apiGet(`meeting-chat/${this.selectedMeeting.meeting_id}`)
         if (data.status === 'success') {
           this.messages = data.messages
           this.$nextTick(() => {
@@ -134,6 +139,9 @@ export default {
         }
       } catch (error) {
         console.error('Error loading chat history:', error)
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login')
+        }
       }
     },
     
@@ -146,25 +154,22 @@ export default {
     async sendMessage() {
       if (!this.messageText.trim()) return
       
-      const user = JSON.parse(localStorage.getItem('user'))
       try {
-        const response = await fetch(apiUrl('meeting-chat/send'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            meeting_id: this.selectedMeeting.meeting_id,
-            sender_id: user.user_id,
-            content: this.messageText
-          })
+        // 使用 apiPost，後端會從 token 獲取 sender_id
+        const data = await apiPost('meeting-chat/send', {
+          meeting_id: this.selectedMeeting.meeting_id,
+          content: this.messageText
         })
         
-        const data = await response.json()
         if (data.status === 'success') {
           this.messageText = ''
           this.loadChatHistory()
         }
       } catch (error) {
         console.error('Error sending message:', error)
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login')
+        }
       }
     },
     

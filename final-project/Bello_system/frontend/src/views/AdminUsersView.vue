@@ -117,7 +117,7 @@
 
 <script>
 import { Modal } from 'bootstrap'
-import { apiUrl } from '@/config/api'
+import { apiGet } from '@/utils/api'
 
 export default {
   name: 'AdminUsersView',
@@ -154,34 +154,40 @@ export default {
     async fetchUsers() {
       try {
         const searchParam = this.searchId ? `&search=${this.searchId}` : '';
-        const response = await fetch(
-          apiUrl(`admin/users?page=${this.currentPage}&limit=${this.itemsPerPage}${searchParam}`)
+        const data = await apiGet(
+          `admin/users?page=${this.currentPage}&limit=${this.itemsPerPage}${searchParam}`
         )
-        const data = await response.json()
         if (data.status === 'success') {
           this.users = data.users
           this.totalUsers = data.total
         } else {
-          alert(data.message)
+          alert(data.message || '獲取用戶列表失敗')
         }
       } catch (error) {
         console.error('Error fetching users:', error)
-        alert('獲取用戶列表失敗')
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login')
+        } else {
+          alert('獲取用戶列表失敗')
+        }
       }
     },
     async showUserDetails(userId) {
       try {
-        const response = await fetch(apiUrl(`admin/users/${userId}`))
-        const data = await response.json()
+        const data = await apiGet(`admin/users/${userId}`)
         if (data.status === 'success') {
           this.selectedUser = data
           this.userModal.show()
         } else {
-          alert(data.message)
+          alert(data.message || '獲取用戶詳細資訊失敗')
         }
       } catch (error) {
         console.error('Error fetching user details:', error)
-        alert('獲取用戶詳細資訊失敗')
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login')
+        } else {
+          alert('獲取用戶詳細資訊失敗')
+        }
       }
     },
     handleSearch: debounce(function() {
