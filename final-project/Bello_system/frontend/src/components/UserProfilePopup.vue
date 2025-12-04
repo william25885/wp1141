@@ -44,6 +44,10 @@
                   <span class="detail-label">性別</span>
                   <span class="detail-value">{{ userProfile.sex }}</span>
                 </div>
+                <div v-if="userProfile.birthday" class="detail-item">
+                  <span class="detail-label">生日</span>
+                  <span class="detail-value">{{ userProfile.birthday }}</span>
+                </div>
                 <div v-if="userProfile.nationality" class="detail-item">
                   <span class="detail-label">國籍</span>
                   <span class="detail-value">{{ userProfile.nationality }}</span>
@@ -64,9 +68,25 @@
                   <span class="detail-label">血型</span>
                   <span class="detail-value">{{ userProfile.blood_type }}</span>
                 </div>
+                <div v-if="userProfile.religion" class="detail-item">
+                  <span class="detail-label">宗教</span>
+                  <span class="detail-value">{{ userProfile.religion }}</span>
+                </div>
+                <div v-if="userProfile.married" class="detail-item">
+                  <span class="detail-label">婚姻狀態</span>
+                  <span class="detail-value">{{ userProfile.married }}</span>
+                </div>
+                <div v-if="userProfile.sns" class="detail-item">
+                  <span class="detail-label">願意交換社群</span>
+                  <span class="detail-value">{{ userProfile.sns === 'YES' ? '是' : '否' }}</span>
+                </div>
                 <div v-if="userProfile.university" class="detail-item full-width">
                   <span class="detail-label">學校</span>
                   <span class="detail-value">{{ userProfile.university }}</span>
+                </div>
+                <div v-if="userProfile.find_meeting_type" class="detail-item full-width">
+                  <span class="detail-label">想找的聚會類型</span>
+                  <span class="detail-value">{{ userProfile.find_meeting_type }}</span>
                 </div>
               </div>
               
@@ -177,12 +197,17 @@ export default {
   computed: {
     hasDetailInfo() {
       return this.userProfile.sex || 
+             this.userProfile.birthday ||
              this.userProfile.nationality || 
              this.userProfile.city ||
              this.userProfile.star_sign || 
              this.userProfile.mbti || 
              this.userProfile.blood_type ||
+             this.userProfile.religion ||
+             this.userProfile.married ||
+             this.userProfile.sns ||
              this.userProfile.university ||
+             this.userProfile.find_meeting_type ||
              this.userProfile.interest ||
              this.userProfile.self_introduction
     }
