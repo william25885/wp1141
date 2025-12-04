@@ -54,7 +54,7 @@ def get_friend_requests():
 def send_friend_request():
     """發送好友請求"""
     try:
-        user_id = request.current_user['user_id']
+        user_id = int(request.current_user['user_id'])
         data = request.get_json()
         friend_id = data.get('friend_id')
         
@@ -62,6 +62,15 @@ def send_friend_request():
             return jsonify({
                 'status': 'error',
                 'message': '缺少好友ID'
+            }), 400
+        
+        # 確保 friend_id 是整數
+        try:
+            friend_id = int(friend_id)
+        except (ValueError, TypeError):
+            return jsonify({
+                'status': 'error',
+                'message': '無效的好友ID'
             }), 400
         
         if user_id == friend_id:
@@ -96,7 +105,7 @@ def send_friend_request():
 def accept_friend_request():
     """接受好友請求"""
     try:
-        user_id = request.current_user['user_id']
+        user_id = int(request.current_user['user_id'])
         data = request.get_json()
         friend_id = data.get('friend_id')
         
@@ -105,6 +114,8 @@ def accept_friend_request():
                 'status': 'error',
                 'message': '缺少好友ID'
             }), 400
+        
+        friend_id = int(friend_id)
         
         db = DatabaseManager()
         success = db.accept_friend_request(user_id, friend_id)
@@ -132,7 +143,7 @@ def accept_friend_request():
 def reject_friend_request():
     """拒絕好友請求"""
     try:
-        user_id = request.current_user['user_id']
+        user_id = int(request.current_user['user_id'])
         data = request.get_json()
         friend_id = data.get('friend_id')
         
@@ -141,6 +152,8 @@ def reject_friend_request():
                 'status': 'error',
                 'message': '缺少好友ID'
             }), 400
+        
+        friend_id = int(friend_id)
         
         db = DatabaseManager()
         success = db.reject_friend_request(user_id, friend_id)
@@ -168,7 +181,7 @@ def reject_friend_request():
 def remove_friend():
     """刪除好友"""
     try:
-        user_id = request.current_user['user_id']
+        user_id = int(request.current_user['user_id'])
         data = request.get_json()
         friend_id = data.get('friend_id')
         
@@ -177,6 +190,8 @@ def remove_friend():
                 'status': 'error',
                 'message': '缺少好友ID'
             }), 400
+        
+        friend_id = int(friend_id)
         
         db = DatabaseManager()
         success = db.remove_friend(user_id, friend_id)
