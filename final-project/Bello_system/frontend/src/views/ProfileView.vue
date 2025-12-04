@@ -126,16 +126,14 @@
 
         <!-- 添加提交按鈕 -->
         <div class="text-center mt-4">
-          <button class="btn btn-primary" @click="updateProfile">更新資料</button>
+          <button class="btn btn-primary" @click="updateProfile">更新詳細資料</button>
         </div>
       </div>
     </div>
     
     <!-- 更新基本資料的提交按鈕 -->
-    <div class="text-center mt-3">
+    <div class="text-center mt-3 mb-4">
       <button class="btn btn-secondary" @click="updateBasicInfo">更新基本資料</button>
-    </div>
-      </div>
     </div>
   </div>
 </template>
