@@ -89,13 +89,18 @@
             <div class="action-buttons mt-4">
               <!-- 好友操作按鈕 -->
               <button 
-                v-if="friendshipStatus === 'none'"
+                v-if="friendshipStatus === 'none' && !loading"
                 class="btn btn-primary w-100 mb-2"
                 @click="addFriend"
-                :disabled="actionLoading"
+                :disabled="actionLoading || loading"
               >
                 {{ actionLoading ? '發送中...' : '加為好友' }}
               </button>
+              
+              <!-- 載入中時顯示 -->
+              <div v-if="loading && friendshipStatus === 'none'" class="text-center py-2">
+                <small class="text-muted">載入中...</small>
+              </div>
               
               <button 
                 v-else-if="friendshipStatus === 'pending_received'"
@@ -211,16 +216,14 @@ export default {
     async loadUserInfo() {
       this.loading = true
       this.userProfile = {}
+      // 先重置狀態，避免顯示錯誤的狀態
+      this.friendshipStatus = 'none'
       
       try {
-        // 獲取用戶公開資料
-        const profileData = await apiGet(`user-profile/${this.userId}`)
-        if (profileData.status === 'success') {
-          this.userProfile = profileData.profile || {}
-        }
-        
-        // 獲取好友狀態
+        // 先獲取好友狀態（最重要，優先載入）
         const statusData = await apiGet(`friends/status/${this.userId}`)
+        console.log('Friendship status API response:', statusData)
+        
         if (statusData.status === 'success') {
           // 確保狀態正確映射
           if (statusData.is_friend) {
@@ -230,9 +233,16 @@ export default {
           } else {
             this.friendshipStatus = 'none'
           }
-          console.log('Friendship status loaded:', this.friendshipStatus, statusData)
+          console.log('Friendship status set to:', this.friendshipStatus)
         } else {
+          console.warn('Failed to load friendship status:', statusData)
           this.friendshipStatus = 'none'
+        }
+        
+        // 獲取用戶公開資料
+        const profileData = await apiGet(`user-profile/${this.userId}`)
+        if (profileData.status === 'success') {
+          this.userProfile = profileData.profile || {}
         }
         
         // 獲取在線狀態
@@ -242,6 +252,7 @@ export default {
         }
       } catch (error) {
         console.error('Error loading user info:', error)
+        this.friendshipStatus = 'none'
       } finally {
         this.loading = false
       }
@@ -257,6 +268,33 @@ export default {
       if (this.friendshipStatus === 'accepted') {
         alert('你們已經是好友了')
         return
+      }
+      
+      // 如果正在載入，等待載入完成
+      if (this.loading) {
+        alert('請稍候，正在載入用戶資訊...')
+        return
+      }
+      
+      // 發送前再次檢查狀態（防止狀態更新延遲）
+      try {
+        const statusData = await apiGet(`friends/status/${this.userId}`)
+        if (statusData.status === 'success') {
+          const currentStatus = statusData.is_friend ? 'accepted' : (statusData.status || 'none')
+          if (currentStatus === 'pending_sent') {
+            this.friendshipStatus = 'pending_sent'
+            alert('您已經發送過好友請求了')
+            return
+          }
+          if (currentStatus === 'accepted') {
+            this.friendshipStatus = 'accepted'
+            alert('你們已經是好友了')
+            return
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to re-check status before sending:', error)
+        // 繼續發送，讓後端驗證
       }
       
       this.actionLoading = true
@@ -279,10 +317,11 @@ export default {
           alert('好友請求已發送！')
         } else {
           // 如果後端返回「已有待處理的好友請求」，更新狀態
-          if (data.message && data.message.includes('已有待處理')) {
-            this.friendshipStatus = 'pending_sent'
+          if (data.message && (data.message.includes('已有待處理') || data.message.includes('已是好友'))) {
             // 重新載入狀態以確保同步
             await this.loadUserInfo()
+            // 不顯示錯誤訊息，因為狀態已經更新
+            return
           }
           alert(data.message || '發送好友請求失敗')
         }
