@@ -1942,9 +1942,9 @@ class DatabaseManager:
     def get_all_private_chat_conversations(self, page=1, limit=50):
         """獲取所有私人聊天對話列表（管理員用）"""
         try:
-            # 獲取總數
+            # 獲取總數（PRIVATE_MESSAGE 欄位名沒有用雙引號建立，所以用小寫）
             count_query = """
-                SELECT COUNT(DISTINCT LEAST("Sender_id", "Receiver_id") || '-' || GREATEST("Sender_id", "Receiver_id"))
+                SELECT COUNT(DISTINCT LEAST(sender_id, receiver_id) || '-' || GREATEST(sender_id, receiver_id))
                 FROM "PRIVATE_MESSAGE"
             """
             count_result = self.execute_query(count_query)
@@ -1957,12 +1957,12 @@ class DatabaseManager:
             query = """
                 WITH conversation_pairs AS (
                     SELECT 
-                        LEAST("Sender_id", "Receiver_id") as user1_id,
-                        GREATEST("Sender_id", "Receiver_id") as user2_id,
+                        LEAST(sender_id, receiver_id) as user1_id,
+                        GREATEST(sender_id, receiver_id) as user2_id,
                         COUNT(*) as message_count,
-                        MAX("Sending_time") as last_message_time
+                        MAX(sending_time) as last_message_time
                     FROM "PRIVATE_MESSAGE"
-                    GROUP BY LEAST("Sender_id", "Receiver_id"), GREATEST("Sender_id", "Receiver_id")
+                    GROUP BY LEAST(sender_id, receiver_id), GREATEST(sender_id, receiver_id)
                 )
                 SELECT 
                     cp.user1_id,
@@ -2006,9 +2006,9 @@ class DatabaseManager:
     def get_all_meeting_chat_list(self, page=1, limit=50):
         """獲取所有有聊天記錄的聚會列表（管理員用）"""
         try:
-            # 獲取有聊天記錄的聚會總數
+            # 獲取有聊天記錄的聚會總數（CHATTING_ROOM 欄位名沒有用雙引號建立，所以用小寫）
             count_query = """
-                SELECT COUNT(DISTINCT cr."Meeting_id")
+                SELECT COUNT(DISTINCT cr.meeting_id)
                 FROM "CHATTING_ROOM" cr
             """
             count_result = self.execute_query(count_query)
@@ -2027,11 +2027,11 @@ class DatabaseManager:
                     m."Meeting_type",
                     m."Status",
                     u."User_name" as holder_name,
-                    COUNT(cr."Sender_id") as message_count,
-                    MAX(cr."Sending_time") as last_message_time
+                    COUNT(cr.sender_id) as message_count,
+                    MAX(cr.sending_time) as last_message_time
                 FROM "MEETING" m
                 JOIN "USER" u ON m."Holder_id" = u."User_id"
-                JOIN "CHATTING_ROOM" cr ON m."Meeting_id" = cr."Meeting_id"
+                JOIN "CHATTING_ROOM" cr ON m."Meeting_id" = cr.meeting_id
                 GROUP BY m."Meeting_id", m."Content", m."Event_date", m."Event_place", 
                          m."Meeting_type", m."Status", u."User_name"
                 ORDER BY last_message_time DESC
