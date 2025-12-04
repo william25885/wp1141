@@ -62,19 +62,19 @@
     </div>
 
     <!-- 圖片裁剪彈窗 -->
-    <div v-if="showCropperModal" class="cropper-modal">
-      <div class="cropper-modal-content">
-        <div class="cropper-header">
+    <div v-if="showCropperModal" class="image-crop-modal">
+      <div class="image-crop-modal-content">
+        <div class="image-crop-header">
           <h5>裁剪頭像</h5>
           <button class="btn-close-modal" @click="closeCropper">✕</button>
         </div>
-        <div class="cropper-body">
-          <div class="cropper-container">
+        <div class="image-crop-body">
+          <div class="image-crop-container">
             <img ref="cropperImage" :src="cropperImageSrc" alt="裁剪圖片">
           </div>
         </div>
-        <div class="cropper-footer">
-          <div class="cropper-tools">
+        <div class="image-crop-footer">
+          <div class="image-crop-tools">
             <button class="btn btn-outline-secondary btn-sm" @click="rotateCropper(-90)" title="向左旋轉">
               ↺ 左轉
             </button>
@@ -85,7 +85,7 @@
               ⟲ 重置
             </button>
           </div>
-          <div class="cropper-actions">
+          <div class="image-crop-actions">
             <button class="btn btn-secondary" @click="closeCropper">取消</button>
             <button class="btn btn-primary" @click="confirmCrop" :disabled="uploadingAvatar">
               {{ uploadingAvatar ? '上傳中...' : '確認裁剪' }}
@@ -905,20 +905,20 @@ export default {
 }
 
 /* ======= 圖片裁剪彈窗樣式 ======= */
-.cropper-modal {
+.image-crop-modal {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.9);
+  background: rgba(0,0,0,0.85);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1100;
 }
 
-.cropper-modal-content {
+.image-crop-modal-content {
   background: #fff;
   border-radius: 12px;
   width: 90%;
@@ -927,55 +927,60 @@ export default {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
 }
 
-.cropper-header {
+.image-crop-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
   border-bottom: 1px solid #e2e8f0;
+  background: #fff;
 }
 
-.cropper-header h5 {
+.image-crop-header h5 {
   margin: 0;
   color: #2d3748;
   font-weight: 600;
 }
 
-.cropper-header .btn-close-modal {
+.image-crop-header .btn-close-modal {
   position: static;
   color: #718096;
   font-size: 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
 }
 
-.cropper-header .btn-close-modal:hover {
+.image-crop-header .btn-close-modal:hover {
   color: #2d3748;
-  transform: none;
 }
 
-.cropper-body {
+.image-crop-body {
   flex: 1;
   padding: 20px;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f7fafc;
+  background: #1a1a2e;
+  min-height: 350px;
 }
 
-.cropper-container {
+.image-crop-container {
   width: 100%;
   max-height: 400px;
 }
 
-.cropper-container img {
+.image-crop-container img {
   display: block;
   max-width: 100%;
   max-height: 400px;
 }
 
-.cropper-footer {
+.image-crop-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -984,31 +989,37 @@ export default {
   background: #fff;
 }
 
-.cropper-tools {
+.image-crop-tools {
   display: flex;
   gap: 8px;
 }
 
-.cropper-tools .btn {
+.image-crop-tools .btn {
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-.cropper-actions {
+.image-crop-actions {
   display: flex;
   gap: 10px;
 }
 
-/* Cropper.js 自定義樣式 */
-:deep(.cropper-view-box),
-:deep(.cropper-face) {
-  border-radius: 50%;
+/* Cropper.js 自定義樣式 - 裁剪區域外的遮罩 */
+:deep(.cropper-modal) {
+  background-color: rgba(0, 0, 0, 0.7) !important;
 }
 
+/* 裁剪框樣式 */
 :deep(.cropper-view-box) {
+  border-radius: 50%;
   box-shadow: 0 0 0 1px #39f;
   outline: 0;
+}
+
+:deep(.cropper-face) {
+  border-radius: 50%;
+  background-color: transparent;
 }
 
 :deep(.cropper-line) {
@@ -1022,7 +1033,8 @@ export default {
   opacity: 0.9;
 }
 
-:deep(.cropper-modal) {
-  background-color: rgba(0, 0, 0, 0.6);
+/* 裁剪框虛線 */
+:deep(.cropper-dashed) {
+  border-color: rgba(255, 255, 255, 0.5);
 }
 </style>
