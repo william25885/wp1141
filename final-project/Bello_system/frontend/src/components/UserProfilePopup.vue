@@ -240,7 +240,17 @@ export default {
     async addFriend() {
       this.actionLoading = true
       try {
-        const data = await apiPost('friends/add', { friend_id: this.userId })
+        // 確保 friend_id 是數字
+        const friendId = parseInt(this.userId)
+        if (isNaN(friendId)) {
+          alert('無效的用戶ID')
+          return
+        }
+        
+        console.log('Sending friend request to:', friendId)
+        const data = await apiPost('friends/add', { friend_id: friendId })
+        console.log('Friend request response:', data)
+        
         if (data.status === 'success') {
           this.friendshipStatus = 'pending_sent'
           this.$emit('friend-updated')
@@ -250,7 +260,7 @@ export default {
         }
       } catch (error) {
         console.error('Error adding friend:', error)
-        alert('發送好友請求失敗')
+        alert('發送好友請求失敗: ' + (error.message || '未知錯誤'))
       } finally {
         this.actionLoading = false
       }
