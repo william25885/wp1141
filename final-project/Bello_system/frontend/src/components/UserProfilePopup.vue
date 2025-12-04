@@ -225,11 +225,11 @@ export default {
         console.log('Friendship status API response:', statusData)
         
         if (statusData.status === 'success') {
-          // 確保狀態正確映射
+          // 使用新的字段名 friendship_status
           if (statusData.is_friend) {
             this.friendshipStatus = 'accepted'
-          } else if (statusData.status) {
-            this.friendshipStatus = statusData.status
+          } else if (statusData.friendship_status) {
+            this.friendshipStatus = statusData.friendship_status
           } else {
             this.friendshipStatus = 'none'
           }
@@ -280,7 +280,7 @@ export default {
       try {
         const statusData = await apiGet(`friends/status/${this.userId}`)
         if (statusData.status === 'success') {
-          const currentStatus = statusData.is_friend ? 'accepted' : (statusData.status || 'none')
+          const currentStatus = statusData.is_friend ? 'accepted' : (statusData.friendship_status || 'none')
           if (currentStatus === 'pending_sent') {
             this.friendshipStatus = 'pending_sent'
             alert('您已經發送過好友請求了')

@@ -225,11 +225,12 @@ def check_friendship_status(other_user_id):
         user_id = int(request.current_user['user_id'])
         other_user_id = int(other_user_id)
         db = DatabaseManager()
-        status = db.check_friendship_status(user_id, other_user_id)
+        friendship_data = db.check_friendship_status(user_id, other_user_id)
         
         return jsonify({
             'status': 'success',
-            **status
+            'friendship_status': friendship_data.get('status', 'none'),
+            'is_friend': friendship_data.get('is_friend', False)
         })
         
     except Exception as e:
