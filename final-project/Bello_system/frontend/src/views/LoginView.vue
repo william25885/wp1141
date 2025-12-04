@@ -70,7 +70,7 @@
               </button>
             </div>
             <p class="mt-3 small text-muted">
-              或者點擊右上角的選單，選擇「在瀏覽器中開啟」
+              或者點擊選單，選擇「在瀏覽器中開啟」
             </p>
           </div>
           <div class="url-modal-footer">
