@@ -72,14 +72,14 @@
             <div v-if="pendingRequests.length > 0" class="pending-section mb-3">
               <h6 class="section-title">好友請求 ({{ pendingRequests.length }})</h6>
               <div v-for="request in pendingRequests" :key="request.user_id" class="request-item">
-                <div class="user-avatar">
-                  <div class="avatar-circle small">
-                    {{ request.user_nickname?.charAt(0) || request.user_name?.charAt(0) }}
+                  <div class="user-avatar">
+                    <div class="avatar-circle small">
+                      {{ request.user_name?.charAt(0) }}
+                    </div>
                   </div>
-                </div>
-                <div class="user-info">
-                  <div class="user-name">{{ request.user_name }}</div>
-                </div>
+                  <div class="user-info">
+                    <div class="user-name">{{ request.user_name }}</div>
+                  </div>
                 <div class="request-actions">
                   <button class="btn btn-success btn-sm" @click="acceptFriend(request.user_id)">
                     接受
@@ -109,12 +109,12 @@
                 >
                   <div class="friend-avatar">
                     <div class="avatar-circle">
-                      {{ friend.user_nickname?.charAt(0) || friend.user_name?.charAt(0) }}
+                      {{ friend.user_name?.charAt(0) }}
                     </div>
                     <span class="online-dot" :class="{ online: friend.is_online }"></span>
                   </div>
                   <div class="friend-info">
-                    <div class="friend-name">{{ friend.user_nickname || friend.user_name }}</div>
+                    <div class="friend-name">{{ friend.user_name }}</div>
                     <small :class="friend.is_online ? 'text-success' : 'text-muted'">
                       {{ friend.is_online ? '在線' : '離線' }}
                     </small>
@@ -383,7 +383,7 @@ export default {
       this.activeTab = 'chats'
       this.startNewChat({
         user_id: friend.user_id,
-        user_name: friend.user_nickname || friend.user_name
+        user_name: friend.user_name
       })
     },
 

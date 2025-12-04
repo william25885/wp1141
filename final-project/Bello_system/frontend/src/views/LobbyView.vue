@@ -61,13 +61,13 @@
         <!-- 待處理的好友請求 -->
         <div v-if="pendingRequests.length > 0" class="pending-section mb-3">
           <h6 class="section-title">好友請求</h6>
-          <div v-for="request in pendingRequests" :key="request.user_id" class="friend-request-item">
-            <div class="user-info">
-              <div class="avatar-circle small">
-                {{ request.user_nickname?.charAt(0) || request.user_name?.charAt(0) }}
+            <div v-for="request in pendingRequests" :key="request.user_id" class="friend-request-item">
+              <div class="user-info">
+                <div class="avatar-circle small">
+                  {{ request.user_name?.charAt(0) }}
+                </div>
+                <span class="user-name">{{ request.user_name }}</span>
               </div>
-              <span class="user-name">{{ request.user_name }}</span>
-            </div>
             <div class="request-actions">
               <button class="btn btn-success btn-sm" @click="acceptFriend(request.user_id)">
                 接受
@@ -94,12 +94,12 @@
             >
               <div class="friend-avatar">
                 <div class="avatar-circle">
-                  {{ friend.user_nickname?.charAt(0) || friend.user_name?.charAt(0) }}
+                  {{ friend.user_name?.charAt(0) }}
                 </div>
                 <span class="online-dot" :class="{ online: friend.is_online }"></span>
               </div>
               <div class="friend-info">
-                <div class="friend-name">{{ friend.user_nickname || friend.user_name }}</div>
+                <div class="friend-name">{{ friend.user_name }}</div>
                 <small :class="friend.is_online ? 'text-success' : 'text-muted'">
                   {{ friend.is_online ? '在線' : '離線' }}
                 </small>
@@ -244,7 +244,7 @@ export default {
         path: '/chat',
         query: {
           userId: friend.user_id,
-          userName: friend.user_nickname || friend.user_name
+          userName: friend.user_name
         }
       })
     }

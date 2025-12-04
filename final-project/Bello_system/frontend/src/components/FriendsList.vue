@@ -27,7 +27,7 @@
       >
         <div class="friend-avatar">
           <div class="avatar-circle">
-            {{ friend.user_nickname?.charAt(0) || friend.user_name?.charAt(0) }}
+            {{ friend.user_name?.charAt(0) }}
           </div>
           <span 
             class="online-indicator" 
@@ -35,7 +35,7 @@
           ></span>
         </div>
         <div class="friend-info">
-          <div class="friend-name">{{ friend.user_nickname || friend.user_name }}</div>
+          <div class="friend-name">{{ friend.user_name }}</div>
           <small class="friend-status" :class="{ 'text-success': friend.is_online }">
             {{ friend.is_online ? '在線' : '離線' }}
           </small>
