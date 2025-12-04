@@ -61,6 +61,40 @@
       </div>
     </div>
 
+    <!-- 圖片裁剪彈窗 -->
+    <div v-if="showCropperModal" class="cropper-modal">
+      <div class="cropper-modal-content">
+        <div class="cropper-header">
+          <h5>裁剪頭像</h5>
+          <button class="btn-close-modal" @click="closeCropper">✕</button>
+        </div>
+        <div class="cropper-body">
+          <div class="cropper-container">
+            <img ref="cropperImage" :src="cropperImageSrc" alt="裁剪圖片">
+          </div>
+        </div>
+        <div class="cropper-footer">
+          <div class="cropper-tools">
+            <button class="btn btn-outline-secondary btn-sm" @click="rotateCropper(-90)" title="向左旋轉">
+              ↺ 左轉
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" @click="rotateCropper(90)" title="向右旋轉">
+              ↻ 右轉
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" @click="resetCropper" title="重置">
+              ⟲ 重置
+            </button>
+          </div>
+          <div class="cropper-actions">
+            <button class="btn btn-secondary" @click="closeCropper">取消</button>
+            <button class="btn btn-primary" @click="confirmCrop" :disabled="uploadingAvatar">
+              {{ uploadingAvatar ? '上傳中...' : '確認裁剪' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 基本資料區塊 -->
     <div class="card mb-4">
       <div class="card-body">
@@ -199,6 +233,8 @@
 
 <script>
 import { getUser, apiGet, apiPost } from '@/utils/api'
+import Cropper from 'cropperjs'
+import 'cropperjs/dist/cropper.css'
 
 export default {
   name: 'ProfileView',
@@ -209,6 +245,10 @@ export default {
       showAvatarMenu: false,
       showAvatarModal: false,
       uploadingAvatar: false,
+      // 裁剪相關
+      showCropperModal: false,
+      cropperImageSrc: '',
+      cropper: null,
       optionFields: {
         Star_sign: {
           name: '星座',
@@ -292,7 +332,7 @@ export default {
       this.$refs.avatarInput.click();
     },
     
-    async handleAvatarUpload(event) {
+    handleAvatarUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
       
@@ -302,43 +342,116 @@ export default {
         return;
       }
       
-      // 檢查文件大小（限制 5MB）
-      if (file.size > 5 * 1024 * 1024) {
-        alert('圖片大小不能超過 5MB');
+      // 檢查文件大小（限制 10MB）
+      if (file.size > 10 * 1024 * 1024) {
+        alert('圖片大小不能超過 10MB');
         return;
       }
+      
+      // 讀取圖片並打開裁剪彈窗
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.cropperImageSrc = e.target.result;
+        this.showCropperModal = true;
+        
+        // 等待 DOM 更新後初始化 Cropper
+        this.$nextTick(() => {
+          this.initCropper();
+        });
+      };
+      reader.readAsDataURL(file);
+      
+      // 清空 input，允許再次選擇相同文件
+      event.target.value = '';
+    },
+    
+    // 初始化裁剪器
+    initCropper() {
+      if (this.cropper) {
+        this.cropper.destroy();
+      }
+      
+      const image = this.$refs.cropperImage;
+      if (image) {
+        this.cropper = new Cropper(image, {
+          aspectRatio: 1, // 1:1 正方形
+          viewMode: 1,
+          dragMode: 'move',
+          autoCropArea: 0.8,
+          restore: false,
+          guides: true,
+          center: true,
+          highlight: false,
+          cropBoxMovable: true,
+          cropBoxResizable: true,
+          toggleDragModeOnDblclick: false,
+          ready: () => {
+            // 裁剪器準備好後的回調
+          }
+        });
+      }
+    },
+    
+    // 旋轉圖片
+    rotateCropper(degree) {
+      if (this.cropper) {
+        this.cropper.rotate(degree);
+      }
+    },
+    
+    // 重置裁剪
+    resetCropper() {
+      if (this.cropper) {
+        this.cropper.reset();
+      }
+    },
+    
+    // 關閉裁剪彈窗
+    closeCropper() {
+      if (this.cropper) {
+        this.cropper.destroy();
+        this.cropper = null;
+      }
+      this.showCropperModal = false;
+      this.cropperImageSrc = '';
+    },
+    
+    // 確認裁剪並上傳
+    async confirmCrop() {
+      if (!this.cropper) return;
       
       this.uploadingAvatar = true;
       
       try {
-        // 將圖片轉換為 base64
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          const base64Data = e.target.result;
-          
-          // 上傳到後端
-          const data = await apiPost('update-avatar', {
-            avatar_data: base64Data
-          });
-          
-          if (data.status === 'success') {
-            this.userData.avatar_url = data.avatar_url || base64Data;
-            alert('頭像更新成功！');
-          } else {
-            alert(data.message || '頭像更新失敗');
-          }
-          
-          this.uploadingAvatar = false;
-        };
-        reader.readAsDataURL(file);
+        // 獲取裁剪後的圖片（以 canvas 形式）
+        const canvas = this.cropper.getCroppedCanvas({
+          width: 400,  // 輸出寬度
+          height: 400, // 輸出高度
+          imageSmoothingEnabled: true,
+          imageSmoothingQuality: 'high',
+        });
+        
+        // 轉換為 base64
+        const base64Data = canvas.toDataURL('image/jpeg', 0.9);
+        
+        // 上傳到後端
+        const data = await apiPost('update-avatar', {
+          avatar_data: base64Data
+        });
+        
+        if (data.status === 'success') {
+          this.userData.avatar_url = data.avatar_url || base64Data;
+          alert('頭像更新成功！');
+          this.closeCropper();
+        } else {
+          alert(data.message || '頭像更新失敗');
+        }
       } catch (error) {
         console.error('Error uploading avatar:', error);
         alert('頭像上傳失敗');
+      } finally {
         this.uploadingAvatar = false;
       }
-      
-      // 清空 input，允許再次選擇相同文件
-      event.target.value = '';
     },
     
     // 點擊頁面其他地方關閉選單
@@ -789,5 +902,127 @@ export default {
 .form-control:focus, .form-select:focus {
   border-color: #4299e1;
   box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+}
+
+/* ======= 圖片裁剪彈窗樣式 ======= */
+.cropper-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+}
+
+.cropper-modal-content {
+  background: #fff;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.cropper-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.cropper-header h5 {
+  margin: 0;
+  color: #2d3748;
+  font-weight: 600;
+}
+
+.cropper-header .btn-close-modal {
+  position: static;
+  color: #718096;
+  font-size: 20px;
+}
+
+.cropper-header .btn-close-modal:hover {
+  color: #2d3748;
+  transform: none;
+}
+
+.cropper-body {
+  flex: 1;
+  padding: 20px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f7fafc;
+}
+
+.cropper-container {
+  width: 100%;
+  max-height: 400px;
+}
+
+.cropper-container img {
+  display: block;
+  max-width: 100%;
+  max-height: 400px;
+}
+
+.cropper-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-top: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+.cropper-tools {
+  display: flex;
+  gap: 8px;
+}
+
+.cropper-tools .btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cropper-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Cropper.js 自定義樣式 */
+:deep(.cropper-view-box),
+:deep(.cropper-face) {
+  border-radius: 50%;
+}
+
+:deep(.cropper-view-box) {
+  box-shadow: 0 0 0 1px #39f;
+  outline: 0;
+}
+
+:deep(.cropper-line) {
+  background-color: #39f;
+}
+
+:deep(.cropper-point) {
+  background-color: #39f;
+  width: 10px;
+  height: 10px;
+  opacity: 0.9;
+}
+
+:deep(.cropper-modal) {
+  background-color: rgba(0, 0, 0, 0.6);
 }
 </style>
