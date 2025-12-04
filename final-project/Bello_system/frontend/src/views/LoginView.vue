@@ -24,9 +24,24 @@
     
     <!-- Google 登入按鈕 -->
     <div class="text-center">
-      <div id="google-signin-btn" class="google-btn-container"></div>
-      <p v-if="googleLoading" class="text-muted mt-2">正在載入 Google 登入...</p>
-      <p v-if="googleError" class="text-danger mt-2">{{ googleError }}</p>
+      <!-- LINE 內嵌瀏覽器提示 -->
+      <div v-if="isLineBrowser" class="line-browser-warning alert alert-warning">
+        <p class="mb-2"><strong>⚠️ 檢測到 LINE 內嵌瀏覽器</strong></p>
+        <p class="mb-2 small">Google 登入在 LINE 內嵌瀏覽器中無法使用。請使用以下方式：</p>
+        <button 
+          class="btn btn-sm btn-primary" 
+          @click="openInExternalBrowser"
+        >
+          在外部瀏覽器開啟
+        </button>
+      </div>
+      
+      <!-- 正常 Google 登入按鈕 -->
+      <div v-else>
+        <div id="google-signin-btn" class="google-btn-container"></div>
+        <p v-if="googleLoading" class="text-muted mt-2">正在載入 Google 登入...</p>
+        <p v-if="googleError" class="text-danger mt-2">{{ googleError }}</p>
+      </div>
     </div>
   </div>
 </template>
@@ -43,13 +58,50 @@ export default {
       password: '',
       googleClientId: null,
       googleLoading: true,
-      googleError: null
+      googleError: null,
+      isLineBrowser: false
     }
   },
   mounted() {
-    this.initGoogleSignIn()
+    this.detectLineBrowser()
+    if (!this.isLineBrowser) {
+      this.initGoogleSignIn()
+    } else {
+      this.googleLoading = false
+    }
   },
   methods: {
+    detectLineBrowser() {
+      // 檢測是否為 LINE 內嵌瀏覽器
+      const userAgent = navigator.userAgent || navigator.vendor || window.opera
+      // LINE 內嵌瀏覽器的 User-Agent 通常包含 "Line" 或 "LINE"
+      this.isLineBrowser = /Line|LINE/i.test(userAgent) && !/Chrome|Safari|Firefox|Edge/i.test(userAgent.split('Line')[0])
+      
+      // 也檢測其他可能被封鎖的內嵌瀏覽器
+      if (!this.isLineBrowser) {
+        // 檢測 Facebook、Instagram 等內嵌瀏覽器
+        this.isLineBrowser = /FBAN|FBAV|Instagram|FB_IAB|FB4A/i.test(userAgent)
+      }
+    },
+    
+    openInExternalBrowser() {
+      // 獲取當前 URL
+      const currentUrl = window.location.href
+      
+      // 嘗試使用不同的方式打開外部瀏覽器
+      // 方法1: 使用 window.open (某些瀏覽器可能不支援)
+      const newWindow = window.open(currentUrl, '_blank')
+      
+      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+        // 方法2: 顯示提示讓用戶手動複製連結
+        alert(
+          '請複製以下網址，並在外部瀏覽器（如 Chrome、Safari）中開啟：\n\n' + 
+          currentUrl + 
+          '\n\n或者點擊右上角的選單，選擇「在瀏覽器中開啟」'
+        )
+      }
+    },
+    
     async initGoogleSignIn() {
       try {
         // 從後端獲取 Google Client ID
@@ -183,5 +235,21 @@ export default {
   display: flex;
   justify-content: center;
   min-height: 44px;
+}
+
+.line-browser-warning {
+  text-align: left;
+  border-left: 4px solid #ffc107;
+  background-color: #fff3cd;
+  border-color: #ffc107;
+}
+
+.line-browser-warning p {
+  margin-bottom: 0.5rem;
+}
+
+.line-browser-warning .small {
+  font-size: 0.875rem;
+  color: #856404;
 }
 </style>
