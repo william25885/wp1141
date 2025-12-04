@@ -241,8 +241,14 @@ export default {
         
         // 獲取用戶公開資料
         const profileData = await apiGet(`user-profile/${this.userId}`)
+        console.log('User profile API response:', profileData)
         if (profileData.status === 'success') {
           this.userProfile = profileData.profile || {}
+          console.log('User profile loaded:', this.userProfile)
+          console.log('Has detail info:', this.hasDetailInfo)
+        } else {
+          console.warn('Failed to load user profile:', profileData)
+          this.userProfile = {}
         }
         
         // 獲取在線狀態
