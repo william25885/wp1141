@@ -1942,10 +1942,10 @@ class DatabaseManager:
     def get_all_private_chat_conversations(self, page=1, limit=50):
         """獲取所有私人聊天對話列表（管理員用）"""
         try:
-            # 獲取總數（PRIVATE_MESSAGE 欄位名沒有用雙引號建立，所以用小寫）
+            # 獲取總數（PRIVATE_MESSAGE 表和欄位名都沒有用雙引號建立，用小寫）
             count_query = """
                 SELECT COUNT(DISTINCT LEAST(sender_id, receiver_id) || '-' || GREATEST(sender_id, receiver_id))
-                FROM "PRIVATE_MESSAGE"
+                FROM private_message
             """
             count_result = self.execute_query(count_query)
             total_count = count_result[0][0] if count_result and count_result[0] else 0
@@ -1961,7 +1961,7 @@ class DatabaseManager:
                         GREATEST(sender_id, receiver_id) as user2_id,
                         COUNT(*) as message_count,
                         MAX(sending_time) as last_message_time
-                    FROM "PRIVATE_MESSAGE"
+                    FROM private_message
                     GROUP BY LEAST(sender_id, receiver_id), GREATEST(sender_id, receiver_id)
                 )
                 SELECT 
@@ -2006,10 +2006,10 @@ class DatabaseManager:
     def get_all_meeting_chat_list(self, page=1, limit=50):
         """獲取所有有聊天記錄的聚會列表（管理員用）"""
         try:
-            # 獲取有聊天記錄的聚會總數（CHATTING_ROOM 欄位名沒有用雙引號建立，所以用小寫）
+            # 獲取有聊天記錄的聚會總數（chatting_room 表和欄位名都沒有用雙引號建立，用小寫）
             count_query = """
                 SELECT COUNT(DISTINCT cr.meeting_id)
-                FROM "CHATTING_ROOM" cr
+                FROM chatting_room cr
             """
             count_result = self.execute_query(count_query)
             total_count = count_result[0][0] if count_result and count_result[0] else 0
@@ -2031,7 +2031,7 @@ class DatabaseManager:
                     MAX(cr.sending_time) as last_message_time
                 FROM "MEETING" m
                 JOIN "USER" u ON m."Holder_id" = u."User_id"
-                JOIN "CHATTING_ROOM" cr ON m."Meeting_id" = cr.meeting_id
+                JOIN chatting_room cr ON m."Meeting_id" = cr.meeting_id
                 GROUP BY m."Meeting_id", m."Content", m."Event_date", m."Event_place", 
                          m."Meeting_type", m."Status", u."User_name"
                 ORDER BY last_message_time DESC
