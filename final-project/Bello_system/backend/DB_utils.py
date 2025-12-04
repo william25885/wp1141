@@ -193,6 +193,140 @@ class DatabaseManager:
         # 登入失敗
         return {"status": "error", "message": "Invalid account or password!"}
 
+    # ==================== Google OAuth 相關方法 ====================
+    
+    def get_user_by_google_id(self, google_id):
+        """透過 Google ID 獲取用戶"""
+        try:
+            query = """
+                SELECT u."User_id", u."User_name", u."User_nickname", u."Email", 
+                       r."Role", u."Avatar_url", u."Google_id"
+                FROM "USER" u
+                LEFT JOIN "USER_ROLE" r ON u."User_id" = r."User_id"
+                WHERE u."Google_id" = %s
+            """
+            result = self.execute_query(query, (google_id,))
+            if result and len(result) > 0:
+                row = result[0]
+                return {
+                    'user_id': row[0],
+                    'user_name': row[1],
+                    'user_nickname': row[2],
+                    'email': row[3],
+                    'role': row[4] or 'User',
+                    'avatar_url': row[5],
+                    'google_id': row[6]
+                }
+            return None
+        except Exception as e:
+            print(f"Error getting user by Google ID: {e}")
+            return None
+    
+    def get_user_by_email(self, email):
+        """透過 Email 獲取用戶"""
+        try:
+            query = """
+                SELECT u."User_id", u."User_name", u."User_nickname", u."Email", 
+                       r."Role", u."Avatar_url", u."Google_id"
+                FROM "USER" u
+                LEFT JOIN "USER_ROLE" r ON u."User_id" = r."User_id"
+                WHERE u."Email" = %s
+            """
+            result = self.execute_query(query, (email,))
+            if result and len(result) > 0:
+                row = result[0]
+                return {
+                    'user_id': row[0],
+                    'user_name': row[1],
+                    'user_nickname': row[2],
+                    'email': row[3],
+                    'role': row[4] or 'User',
+                    'avatar_url': row[5],
+                    'google_id': row[6]
+                }
+            return None
+        except Exception as e:
+            print(f"Error getting user by email: {e}")
+            return None
+    
+    def create_google_user(self, google_id, email, user_name, avatar_url):
+        """創建 Google 用戶"""
+        try:
+            # 獲取最大的 User_id
+            max_id_query = 'SELECT COALESCE(MAX("User_id"), 0) FROM "USER"'
+            result = self.execute_query(max_id_query)
+            new_user_id = result[0][0] + 1
+            
+            # 生成唯一帳號（使用 google_ 前綴 + user_id）
+            account = f"google_{new_user_id}"
+            
+            # 使用 Google 名稱作為用戶名和暱稱
+            user_nickname = user_name if user_name else f"User{new_user_id}"
+            
+            # 插入用戶資料（Google 用戶不需要密碼和其他必填欄位）
+            insert_query = """
+                INSERT INTO "USER" (
+                    "User_id", "Account", "User_name", "User_nickname", 
+                    "Email", "Register_time", "Google_id", "Avatar_url"
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING "User_id"
+            """
+            from datetime import datetime
+            result = self.execute_query(
+                insert_query,
+                (new_user_id, account, user_name, user_nickname, 
+                 email, datetime.now(), google_id, avatar_url)
+            )
+            self.conn.commit()
+            
+            if result and len(result) > 0:
+                return result[0][0]
+            return None
+            
+        except Exception as e:
+            self.conn.rollback()
+            print(f"Error creating Google user: {e}")
+            return None
+    
+    def link_google_account(self, user_id, google_id, avatar_url=None):
+        """將 Google 帳戶連結到現有用戶"""
+        try:
+            if avatar_url:
+                query = """
+                    UPDATE "USER" 
+                    SET "Google_id" = %s, "Avatar_url" = %s
+                    WHERE "User_id" = %s
+                """
+                self.execute_query(query, (google_id, avatar_url, user_id))
+            else:
+                query = """
+                    UPDATE "USER" 
+                    SET "Google_id" = %s
+                    WHERE "User_id" = %s
+                """
+                self.execute_query(query, (google_id, user_id))
+            self.conn.commit()
+            return True
+        except Exception as e:
+            self.conn.rollback()
+            print(f"Error linking Google account: {e}")
+            return False
+    
+    def get_user_avatar(self, user_id):
+        """獲取用戶頭像 URL"""
+        try:
+            query = 'SELECT "Avatar_url" FROM "USER" WHERE "User_id" = %s'
+            result = self.execute_query(query, (user_id,))
+            if result and len(result) > 0:
+                return result[0][0]
+            return None
+        except Exception as e:
+            print(f"Error getting user avatar: {e}")
+            return None
+
+    # ==================== 用戶詳細資料相關方法 ====================
+
     def update_user_detail(self, field, value, user_id):
         try:
             cursor = self.conn.cursor()

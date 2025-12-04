@@ -5,17 +5,19 @@ SET client_encoding = 'UTF8';
 -- Create USER table
 CREATE TABLE "USER" (
     User_id BIGINT PRIMARY KEY,
-    Account VARCHAR(15) NOT NULL UNIQUE,
-    User_name VARCHAR(20) NOT NULL,
-    User_nickname VARCHAR(20) NOT NULL,
-    Password VARCHAR(15) NOT NULL,
-    Nationality VARCHAR(20) NOT NULL,
+    Account VARCHAR(50) NOT NULL UNIQUE,
+    User_name VARCHAR(50) NOT NULL,
+    User_nickname VARCHAR(50) NOT NULL,
+    Password VARCHAR(100),
+    Nationality VARCHAR(20),
     City VARCHAR(20),
-    Phone VARCHAR(20) NOT NULL,
-    Email VARCHAR(50) NOT NULL UNIQUE,
-    Sex VARCHAR(10) NOT NULL,
-    Birthday DATE NOT NULL,
-    Register_time TIMESTAMP NOT NULL
+    Phone VARCHAR(20),
+    Email VARCHAR(100) NOT NULL UNIQUE,
+    Sex VARCHAR(10),
+    Birthday DATE,
+    Register_time TIMESTAMP NOT NULL,
+    Google_id VARCHAR(100) UNIQUE,
+    Avatar_url VARCHAR(500)
 );
 \copy "USER" FROM 'users.csv' WITH (FORMAT csv);
 -- Create USER_DETAIL table

@@ -4,6 +4,7 @@ from flask_cors import CORS
 from actions.auth.login import login
 from actions.auth.signup import signUp
 from actions.auth.exit import exit
+from actions.auth.google_auth import google_auth
 from actions.meeting.create_meeting import create_meeting
 from actions.meeting.list_meeting import list_meeting
 from actions.meeting.join_meeting import join_meeting
@@ -59,6 +60,7 @@ CORS(app, resources={
 app.register_blueprint(login, url_prefix='/api')
 app.register_blueprint(signUp, url_prefix='/api')
 app.register_blueprint(exit, url_prefix='/api')
+app.register_blueprint(google_auth, url_prefix='/api')
 app.register_blueprint(create_meeting, url_prefix='/api')
 app.register_blueprint(list_meeting, url_prefix='/api')
 app.register_blueprint(join_meeting, url_prefix='/api')
