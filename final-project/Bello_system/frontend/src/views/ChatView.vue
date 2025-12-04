@@ -38,7 +38,13 @@
                      class="chat-item"
                      :class="{ active: selectedUserId === chat.other_user_id }">
                   <div class="chat-avatar">
-                    <div class="avatar-circle">
+                    <img 
+                      v-if="chat.avatar_url" 
+                      :src="chat.avatar_url" 
+                      class="avatar-img"
+                      alt="avatar"
+                    />
+                    <div v-else class="avatar-circle">
                       {{ chat.other_user_name?.charAt(0) }}
                     </div>
                     <span 
@@ -73,7 +79,13 @@
               <h6 class="section-title">好友請求 ({{ pendingRequests.length }})</h6>
               <div v-for="request in pendingRequests" :key="request.user_id" class="request-item">
                   <div class="user-avatar">
-                    <div class="avatar-circle small">
+                    <img 
+                      v-if="request.avatar_url" 
+                      :src="request.avatar_url" 
+                      class="avatar-img small"
+                      alt="avatar"
+                    />
+                    <div v-else class="avatar-circle small">
                       {{ request.user_name?.charAt(0) }}
                     </div>
                   </div>
@@ -108,7 +120,13 @@
                   @click="startChatWithFriend(friend)"
                 >
                   <div class="friend-avatar">
-                    <div class="avatar-circle">
+                    <img 
+                      v-if="friend.avatar_url" 
+                      :src="friend.avatar_url" 
+                      class="avatar-img"
+                      alt="avatar"
+                    />
+                    <div v-else class="avatar-circle">
                       {{ friend.user_name?.charAt(0) }}
                     </div>
                     <span class="online-dot" :class="{ online: friend.is_online }"></span>
@@ -740,6 +758,18 @@ export default {
   justify-content: center;
   font-weight: 600;
   font-size: 16px;
+}
+
+.avatar-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-img.small {
+  width: 32px;
+  height: 32px;
 }
 
 .avatar-circle.small {

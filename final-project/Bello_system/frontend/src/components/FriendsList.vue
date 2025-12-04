@@ -26,7 +26,13 @@
         @click="$emit('start-chat', friend)"
       >
         <div class="friend-avatar">
-          <div class="avatar-circle">
+          <img 
+            v-if="friend.avatar_url" 
+            :src="friend.avatar_url" 
+            class="avatar-img"
+            alt="avatar"
+          />
+          <div v-else class="avatar-circle">
             {{ friend.user_name?.charAt(0) }}
           </div>
           <span 
@@ -135,6 +141,13 @@ export default {
   justify-content: center;
   font-weight: 600;
   font-size: 16px;
+}
+
+.avatar-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .online-indicator {

@@ -36,7 +36,13 @@
               class="user-item"
             >
               <div class="user-avatar">
-                <div class="avatar-circle">
+                <img 
+                  v-if="user.avatar_url" 
+                  :src="user.avatar_url" 
+                  class="avatar-img"
+                  alt="avatar"
+                />
+                <div v-else class="avatar-circle">
                   {{ user.user_nickname?.charAt(0) || user.user_name?.charAt(0) }}
                 </div>
               </div>
@@ -85,7 +91,13 @@
               class="request-item"
             >
               <div class="user-avatar">
-                <div class="avatar-circle small">
+                <img 
+                  v-if="request.avatar_url" 
+                  :src="request.avatar_url" 
+                  class="avatar-img small"
+                  alt="avatar"
+                />
+                <div v-else class="avatar-circle small">
                   {{ request.user_nickname?.charAt(0) || request.user_name?.charAt(0) }}
                 </div>
               </div>
@@ -284,6 +296,18 @@ export default {
   align-items: center;
   justify-content: center;
   font-weight: 600;
+}
+
+.avatar-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-img.small {
+  width: 32px;
+  height: 32px;
 }
 
 .avatar-circle.small {

@@ -1439,6 +1439,7 @@ class DatabaseManager:
                 SELECT 
                     cp.partner_id,
                     u."User_name",
+                    u."Avatar_url",
                     (
                         SELECT "Sending_time" 
                         FROM "PRIVATE_MESSAGE" pm2
@@ -1467,8 +1468,9 @@ class DatabaseManager:
                     {
                         "other_user_id": row[0],
                         "other_user_name": row[1],
+                        "avatar_url": row[2],
                         "last_message_time": (
-                            row[2].strftime("%Y-%m-%d %H:%M:%S") if row[2] else None
+                            row[3].strftime("%Y-%m-%d %H:%M:%S") if row[3] else None
                         ),
                     }
                 )
@@ -1721,6 +1723,7 @@ class DatabaseManager:
                     u."User_id",
                     u."User_name",
                     u."User_nickname",
+                    u."Avatar_url",
                     COALESCE(os."Is_online", FALSE) as is_online,
                     os."Last_active"
                 FROM "USER" u
@@ -1744,8 +1747,9 @@ class DatabaseManager:
                     'user_id': row[0],
                     'user_name': row[1],
                     'user_nickname': row[2],
-                    'is_online': row[3],
-                    'last_active': row[4].strftime('%Y-%m-%d %H:%M:%S') if row[4] else None
+                    'avatar_url': row[3],
+                    'is_online': row[4],
+                    'last_active': row[5].strftime('%Y-%m-%d %H:%M:%S') if row[5] else None
                 })
             return friends
             
@@ -1761,6 +1765,7 @@ class DatabaseManager:
                     u."User_id",
                     u."User_name",
                     u."User_nickname",
+                    u."Avatar_url",
                     f."Created_at"
                 FROM "USER" u
                 INNER JOIN "FRIENDSHIP" f ON f."User_id" = u."User_id"
@@ -1778,7 +1783,8 @@ class DatabaseManager:
                     'user_id': row[0],
                     'user_name': row[1],
                     'user_nickname': row[2],
-                    'created_at': row[3].strftime('%Y-%m-%d %H:%M:%S') if row[3] else None
+                    'avatar_url': row[3],
+                    'created_at': row[4].strftime('%Y-%m-%d %H:%M:%S') if row[4] else None
                 })
             return requests
             
@@ -1794,6 +1800,7 @@ class DatabaseManager:
                     u."User_id",
                     u."User_name",
                     u."User_nickname",
+                    u."Avatar_url",
                     f."Created_at"
                 FROM "USER" u
                 INNER JOIN "FRIENDSHIP" f ON f."Friend_id" = u."User_id"
@@ -1811,7 +1818,8 @@ class DatabaseManager:
                     'user_id': row[0],
                     'user_name': row[1],
                     'user_nickname': row[2],
-                    'created_at': row[3].strftime('%Y-%m-%d %H:%M:%S') if row[3] else None
+                    'avatar_url': row[3],
+                    'created_at': row[4].strftime('%Y-%m-%d %H:%M:%S') if row[4] else None
                 })
             return requests
             
