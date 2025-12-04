@@ -137,7 +137,13 @@
             <div v-if="selectedUserId" class="chat-window">
               <div class="chat-header">
                 <div class="chat-header-info">
-                  <h4>{{ selectedUserName }}</h4>
+                  <h4 
+                    class="clickable-name"
+                    @click="showUserProfile"
+                    style="cursor: pointer;"
+                  >
+                    {{ selectedUserName }}
+                  </h4>
                   <small v-if="selectedUserOnline !== null" :class="selectedUserOnline ? 'text-success' : 'text-muted'">
                     {{ selectedUserOnline ? '在線' : '離線' }}
                   </small>
@@ -222,12 +228,24 @@
       @close="showAddFriend = false"
       @friend-added="loadFriends"
     />
+
+    <!-- 用戶資訊彈窗 -->
+    <UserProfilePopup
+      :show="showProfilePopup"
+      :userId="selectedUser.user_id"
+      :userName="selectedUser.user_name"
+      :userNickname="selectedUser.user_nickname"
+      @close="showProfilePopup = false"
+      @start-chat="goToPrivateChat"
+      @friend-updated="onFriendUpdated"
+    />
   </div>
 </template>
 
 <script>
 import { getUser, apiGet, apiPost } from '@/utils/api'
 import AddFriendModal from '@/components/AddFriendModal.vue'
+import UserProfilePopup from '@/components/UserProfilePopup.vue'
 
 function debounce(fn, delay) {
   let timeout
@@ -240,7 +258,8 @@ function debounce(fn, delay) {
 export default {
   name: 'PrivateChatView',
   components: {
-    AddFriendModal
+    AddFriendModal,
+    UserProfilePopup
   },
   data() {
     return {
@@ -263,7 +282,14 @@ export default {
       showAddFriend: false,
       friendsOnlineStatus: {},
       pollingInterval: null,
-      onlineStatusInterval: null
+      onlineStatusInterval: null,
+      // 用戶資訊彈窗
+      showProfilePopup: false,
+      selectedUser: {
+        user_id: null,
+        user_name: '',
+        user_nickname: ''
+      }
     }
   },
   computed: {
@@ -565,6 +591,36 @@ export default {
       this.showUserSearch = false;
       this.searchQuery = '';
       this.filteredUsers = [];
+    },
+    
+    showUserProfile() {
+      if (!this.selectedUserId) return
+      
+      // 從聊天列表或好友列表中獲取用戶資訊
+      const chat = this.chatList.find(c => c.other_user_id === this.selectedUserId)
+      const friend = this.friends.find(f => f.user_id === this.selectedUserId)
+      
+      this.selectedUser = {
+        user_id: this.selectedUserId,
+        user_name: this.selectedUserName || (chat ? chat.other_user_name : '') || (friend ? friend.user_name : ''),
+        user_nickname: (chat ? chat.other_user_nickname : '') || (friend ? friend.user_nickname : '') || ''
+      }
+      
+      this.showProfilePopup = true
+    },
+    
+    goToPrivateChat(user) {
+      // 如果點擊「開始聊天」，切換到該用戶的聊天
+      this.showProfilePopup = false
+      this.startNewChat({
+        user_id: user.user_id,
+        user_name: user.user_name || user.user_nickname
+      })
+    },
+    
+    onFriendUpdated() {
+      // 好友狀態更新後，重新載入好友列表
+      this.loadFriends()
     }
   },
   beforeUnmount() {
