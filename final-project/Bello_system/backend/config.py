@@ -11,3 +11,8 @@ class Config:
     # Server settings
     SERVER_HOST = os.getenv('SERVER_HOST', '127.0.0.1')
     SERVER_PORT = int(os.getenv('SERVER_PORT', '8800'))
+    
+    # JWT settings
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'bello-secret-key-change-in-production')
+    JWT_ALGORITHM = 'HS256'
+    JWT_EXPIRATION_HOURS = 24

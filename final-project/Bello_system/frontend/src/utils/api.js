@@ -4,23 +4,70 @@
 import { apiUrl } from '@/config/api'
 
 /**
+ * 獲取存儲的 token
+ */
+export function getToken() {
+  return localStorage.getItem('token')
+}
+
+/**
+ * 獲取存儲的用戶信息
+ */
+export function getUser() {
+  const userStr = localStorage.getItem('user')
+  return userStr ? JSON.parse(userStr) : null
+}
+
+/**
+ * 設置 token 和用戶信息
+ */
+export function setAuth(token, user) {
+  localStorage.setItem('token', token)
+  localStorage.setItem('user', JSON.stringify(user))
+}
+
+/**
+ * 清除認證信息
+ */
+export function clearAuth() {
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+}
+
+/**
  * 發送 API 請求的通用函數
  * @param {string} endpoint - API 端點（例如：'login', 'user-profile/1'）
  * @param {object} options - fetch 選項
+ * @param {boolean} requireAuth - 是否需要認證（預設為 true）
  * @returns {Promise} fetch 響應
  */
-export async function apiRequest(endpoint, options = {}) {
-  const defaultOptions = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+export async function apiRequest(endpoint, options = {}, requireAuth = true) {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  }
+
+  // 如果需要認證，自動添加 token
+  if (requireAuth) {
+    const token = getToken()
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
   }
 
   const response = await fetch(apiUrl(endpoint), {
-    ...defaultOptions,
     ...options,
+    headers,
   })
+
+  // 如果 token 過期或無效，清除認證信息
+  if (response.status === 401 && requireAuth) {
+    clearAuth()
+    // 可以選擇重定向到登入頁面
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login'
+    }
+  }
 
   return response
 }

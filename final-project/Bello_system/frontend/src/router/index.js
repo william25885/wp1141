@@ -94,13 +94,15 @@ const router = createRouter({
 })
 
 // 導航守衛
+import { getUser } from '@/utils/api'
+
 router.beforeEach((to, from, next) => {
   console.log('Navigation guard - from:', from.path)
   console.log('Navigation guard - to:', to.path)
   console.log('Navigation guard - matched routes:', to.matched)
   
   if (to.meta.requiresAdmin) {
-    const user = JSON.parse(localStorage.getItem('user'))
+    const user = getUser()
     console.log('Current user:', user)
     if (!user || user.role !== 'Admin') {
       console.log('Unauthorized access, redirecting to login')

@@ -1,9 +1,11 @@
 from flask import Blueprint, jsonify, request
 from DB_utils import DatabaseManager
+from jwt_utils import require_admin
 
 admin_users = Blueprint("admin_users", __name__)
 
 @admin_users.route('/admin/users', methods=['GET'])
+@require_admin
 def get_all_users():
     try:
         page = request.args.get('page', 1, type=int)
@@ -27,6 +29,7 @@ def get_all_users():
         }), 500
 
 @admin_users.route('/admin/users/<int:user_id>', methods=['GET'])
+@require_admin
 def get_user_details(user_id):
     try:
         db = DatabaseManager()

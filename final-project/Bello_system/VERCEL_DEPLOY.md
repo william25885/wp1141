@@ -74,8 +74,18 @@ Bello_system/
    - 選擇你的 Git 倉庫
 
 2. **配置專案**
+   
+   ⚠️ **重要**：因為專案位於 `final-project/Bello_system/` 子目錄中，必須設置 Root Directory
+   
+   **選項 A：使用 vercel.json（推薦）**
    - Framework Preset: Other
-   - Root Directory: `/`（根目錄）
+   - Root Directory: `final-project/Bello_system` ⚠️ **必須設置**
+   - Build Command: 留空（vercel.json 會自動處理）
+   - Output Directory: 留空（vercel.json 會自動處理）
+   
+   **選項 B：手動配置（不使用 vercel.json）**
+   - Framework Preset: Other
+   - Root Directory: `final-project/Bello_system` ⚠️ **必須設置**
    - Build Command: `cd frontend && npm run build`
    - Output Directory: `frontend/dist`
 
@@ -118,11 +128,38 @@ Bello_system/
 }
 ```
 
+### 後端部署說明
+
+**後端如何運行？**
+
+後端通過 Vercel 的 **Serverless Functions** 運行，不需要單獨啟動：
+
+1. **API 入口**：`api/index.py`
+   - 這是 Vercel Serverless Function 的入口點
+   - 會導入 `backend/app.py` 中的 Flask 應用
+
+2. **路由配置**：
+   - 所有 `/api/*` 請求會被路由到 `api/index.py`
+   - Vercel 會自動將 Flask 應用轉換為 Serverless Function
+
+3. **依賴安裝**：
+   - `api/requirements.txt` 包含 Python 依賴
+   - Vercel 會在部署時自動安裝這些依賴
+
+4. **運行方式**：
+   - 每次 API 請求時，Vercel 會啟動一個 Serverless Function
+   - 函數執行完畢後會自動關閉（按需啟動）
+   - 不需要持續運行的服務器
+
+**與本地開發的區別**：
+- 本地：`python app.py` 啟動持續運行的服務器（port 8800）
+- Vercel：每次請求時按需啟動 Serverless Function（無需手動啟動）
+
 ### 前端 API 配置
 
 前端使用 `src/config/api.js` 來管理 API 基礎 URL：
-- 開發環境：使用 `http://localhost:8800`
-- 生產環境：使用相對路徑 `/api`（同域）
+- 開發環境：使用 `http://localhost:8800`（連接到本地 Flask 服務器）
+- 生產環境：使用相對路徑 `/api`（連接到 Vercel Serverless Function）
 
 可以通過環境變數 `VITE_API_URL` 自定義。
 
@@ -171,7 +208,7 @@ Bello_system/
 ### 1. 構建失敗
 
 **問題**：`@vercel/python` 找不到模組
-**解決**：確保 `requirements.txt` 在 `backend/` 目錄中，Vercel 會自動找到
+**解決**：確保 `requirements.txt` 在 `api/` 目錄中（已複製），Vercel 會自動找到並安裝依賴
 
 ### 2. API 路由 404
 

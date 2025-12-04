@@ -19,6 +19,8 @@
 </template>
 
 <script>
+import { getUser, clearAuth } from '@/utils/api'
+
 export default {
   name: 'App',
   data() {
@@ -37,17 +39,17 @@ export default {
   },
   methods: {
     checkLoginStatus() {
-      const user = localStorage.getItem('user')
+      const user = getUser()
       if (user) {
         this.isLoggedIn = true
-        this.userRole = JSON.parse(user).role
+        this.userRole = user.role
       } else {
         this.isLoggedIn = false
         this.userRole = null
       }
     },
     handleLogout() {
-      localStorage.removeItem('user')
+      clearAuth()
       this.isLoggedIn = false
       this.userRole = null
       this.$router.push('/login')

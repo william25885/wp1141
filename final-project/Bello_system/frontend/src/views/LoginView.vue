@@ -21,6 +21,7 @@
 
 <script>
 import { apiUrl } from '@/config/api'
+import { setAuth, getUser } from '@/utils/api'
 
 export default {
   name: 'LoginView',
@@ -32,8 +33,9 @@ export default {
   },
   created() {
     // 如果用戶已登入，直接導向到 lobby
-    if (localStorage.getItem('user')) {
-      this.$router.push('/lobby')
+    const user = getUser()
+    if (user) {
+      this.$router.push(user.role === 'Admin' ? '/admin-lobby' : '/lobby')
     }
   },
   methods: {
@@ -51,8 +53,9 @@ export default {
         })
         
         const data = await response.json()
-        if (data.status === 'success') {
-          localStorage.setItem('user', JSON.stringify(data.user))
+        if (data.status === 'success' && data.token) {
+          // 存儲 token 和用戶信息
+          setAuth(data.token, data.user)
           this.$router.push(data.user.role === 'Admin' ? '/admin-lobby' : '/lobby')
         } else {
           alert('帳號或密碼錯誤')
