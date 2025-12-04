@@ -85,7 +85,7 @@
         <p v-if="googleLoading" class="text-muted mt-2">正在載入 Google 登入...</p>
         <p v-if="googleError" class="text-danger mt-2">{{ googleError }}</p>
         <button 
-          v-if="googleError && googleError.includes('403') || googleError.includes('disallowed')"
+          v-if="googleError && (googleError.includes('403') || googleError.includes('disallowed'))"
           class="btn btn-sm btn-warning mt-2" 
           @click="showLineWarning = true"
         >
@@ -108,11 +108,12 @@ export default {
       password: '',
       googleClientId: null,
       googleLoading: true,
-      googleError: null,
+      googleError: '',
       isLineBrowser: false,
       showLineWarning: false,
       showUrlModal: false,
-      urlCopied: false
+      urlCopied: false,
+      sdkWaitAttempts: 0
     }
   },
   mounted() {
@@ -246,17 +247,41 @@ export default {
     },
     
     waitForGoogleSDK() {
+      // 如果已經顯示警告，不需要渲染按鈕
+      if (this.isLineBrowser || this.showLineWarning) {
+        return
+      }
+      
       // 檢查 Google SDK 是否已載入
       if (window.google && window.google.accounts) {
         this.renderGoogleButton()
       } else {
-        // 等待 SDK 載入
-        setTimeout(() => this.waitForGoogleSDK(), 100)
+        // 等待 SDK 載入，但設置超時避免無限循環
+        const maxAttempts = 50 // 最多嘗試 5 秒
+        if (!this.sdkWaitAttempts) {
+          this.sdkWaitAttempts = 0
+        }
+        this.sdkWaitAttempts++
+        
+        if (this.sdkWaitAttempts < maxAttempts) {
+          setTimeout(() => this.waitForGoogleSDK(), 100)
+        } else {
+          console.error('Google SDK failed to load after timeout')
+          this.googleLoading = false
+          this.googleError = 'Google 登入載入超時，請重新整理頁面'
+        }
       }
     },
     
     renderGoogleButton() {
       if (!this.googleClientId) return
+      
+      // 檢查元素是否存在（可能在 v-else 區塊中不可見）
+      const buttonElement = document.getElementById('google-signin-btn')
+      if (!buttonElement) {
+        console.warn('Google sign-in button element not found')
+        return
+      }
       
       try {
         window.google.accounts.id.initialize({
@@ -267,7 +292,7 @@ export default {
         })
         
         window.google.accounts.id.renderButton(
-          document.getElementById('google-signin-btn'),
+          buttonElement,
           {
             theme: 'outline',
             size: 'large',
