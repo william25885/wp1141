@@ -1859,6 +1859,7 @@ class DatabaseManager:
                     u."User_id", 
                     u."User_name", 
                     u."User_nickname",
+                    u."Avatar_url",
                     CASE 
                         WHEN f."Status" = 'accepted' THEN 'friend'
                         WHEN f."Status" = 'pending' AND f."User_id" = %s THEN 'pending_sent'
@@ -1871,9 +1872,10 @@ class DatabaseManager:
                     (f."User_id" = %s AND f."Friend_id" = u."User_id")
                     OR (f."Friend_id" = %s AND f."User_id" = u."User_id")
                 )
-                WHERE ("User_id"::text LIKE %s 
-                      OR "User_nickname" ILIKE %s 
-                      OR "User_name" ILIKE %s)
+                WHERE (u."User_id"::text LIKE %s 
+                      OR u."User_nickname" ILIKE %s 
+                      OR u."User_name" ILIKE %s
+                      OR u."Account" ILIKE %s)
                 AND u."User_id" != %s
                 AND ur."User_id" IS NULL
                 LIMIT %s
@@ -1882,7 +1884,7 @@ class DatabaseManager:
             params = (
                 current_user_id, current_user_id,
                 current_user_id, current_user_id,
-                search_pattern, search_pattern, search_pattern,
+                search_pattern, search_pattern, search_pattern, search_pattern,
                 current_user_id, limit
             )
             
@@ -1893,13 +1895,16 @@ class DatabaseManager:
                     'user_id': row[0], 
                     'user_name': row[1], 
                     'user_nickname': row[2],
-                    'friendship_status': row[3] if row[3] else 'none'
+                    'avatar_url': row[3],
+                    'friendship_status': row[4] if row[4] else 'none'
                 }
                 for row in result
             ]
             
         except Exception as e:
             print(f"Error in search_users_for_friend: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return []
 
     # ==================== 在線狀態功能 ====================
