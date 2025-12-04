@@ -17,7 +17,7 @@ CREATE TABLE "USER" (
     Birthday DATE,
     Register_time TIMESTAMP NOT NULL,
     Google_id VARCHAR(100) UNIQUE,
-    Avatar_url VARCHAR(500)
+    Avatar_url TEXT
 );
 \copy "USER" FROM 'users.csv' WITH (FORMAT csv);
 -- Create USER_DETAIL table

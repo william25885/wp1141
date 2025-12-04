@@ -578,9 +578,11 @@ export default {
   text-align: center;
   position: relative;
   padding: 30px 0;
-  background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+  background: #fff;
   border-radius: 12px;
   margin-bottom: 24px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border: 1px solid #e2e8f0;
 }
 
 .avatar-wrapper {
@@ -642,13 +644,13 @@ export default {
 }
 
 .user-display-name {
-  color: #fff;
+  color: #2d3748;
   font-size: 1.4rem;
   font-weight: 600;
 }
 
 .user-account {
-  color: rgba(255,255,255,0.7);
+  color: #718096;
   font-size: 0.9rem;
 }
 
