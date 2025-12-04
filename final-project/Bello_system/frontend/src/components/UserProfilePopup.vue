@@ -185,6 +185,24 @@ export default {
   watch: {
     show(newVal) {
       if (newVal && this.userId) {
+        // 重置狀態，避免顯示上一個用戶的狀態
+        this.friendshipStatus = 'none'
+        this.onlineStatus = null
+        this.userProfile = {}
+        this.loadUserInfo()
+      } else {
+        // 關閉時重置狀態
+        this.friendshipStatus = 'none'
+        this.onlineStatus = null
+        this.userProfile = {}
+      }
+    },
+    userId(newVal, oldVal) {
+      // 當 userId 改變時，重置狀態並重新載入
+      if (newVal && newVal !== oldVal && this.show) {
+        this.friendshipStatus = 'none'
+        this.onlineStatus = null
+        this.userProfile = {}
         this.loadUserInfo()
       }
     }

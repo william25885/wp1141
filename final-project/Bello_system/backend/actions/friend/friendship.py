@@ -219,7 +219,8 @@ def remove_friend():
 def check_friendship_status(other_user_id):
     """檢查與指定用戶的好友狀態"""
     try:
-        user_id = request.current_user['user_id']
+        user_id = int(request.current_user['user_id'])
+        other_user_id = int(other_user_id)
         db = DatabaseManager()
         status = db.check_friendship_status(user_id, other_user_id)
         
