@@ -66,11 +66,11 @@ class DatabaseManager:
             # 檢查是否為 SELECT 查詢（包括 WITH ... SELECT）
             query_upper = query.strip().upper()
             is_select = (
-                query_upper.startswith("SELECT") 
+                query_upper.startswith("SELECT")
                 or query_upper.startswith("WITH")
                 or "RETURNING" in query_upper
             )
-            
+
             if is_select:
                 result = cur.fetchall()
             else:
