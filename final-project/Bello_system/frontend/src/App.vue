@@ -2,7 +2,7 @@
   <div id="app">
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
       <div class="container">
-        <router-link class="navbar-brand" :to="homeRoute">Bello</router-link>
+        <router-link class="navbar-brand bello-logo" :to="homeRoute">Bello</router-link>
         <div class="d-flex">
           <template v-if="!isLoggedIn">
             <router-link v-if="$route.path !== '/register'" to="/register" class="btn btn-outline-primary me-2">註冊新帳號</router-link>
@@ -111,5 +111,38 @@ export default {
 
 .navbar {
   margin-bottom: 2rem;
+}
+
+.bello-logo {
+  font-weight: 800 !important;
+  font-size: 1.8rem !important;
+  letter-spacing: 0.05em;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-decoration: none !important;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.bello-logo:hover {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
+
+.bello-logo::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transition: width 0.3s ease;
+}
+
+.bello-logo:hover::after {
+  width: 100%;
 }
 </style>
