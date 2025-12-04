@@ -63,14 +63,19 @@ class DatabaseManager:
             else:
                 cur.execute(query)
 
-            if (
-                query.strip().upper().startswith("SELECT")
-                or "RETURNING" in query.upper()
-            ):
+            # 檢查是否為 SELECT 查詢（包括 WITH ... SELECT）
+            query_upper = query.strip().upper()
+            is_select = (
+                query_upper.startswith("SELECT") 
+                or query_upper.startswith("WITH")
+                or "RETURNING" in query_upper
+            )
+            
+            if is_select:
                 result = cur.fetchall()
             else:
                 self.conn.commit()
-                result = cur.fetchall() if "RETURNING" in query.upper() else True
+                result = cur.fetchall() if "RETURNING" in query_upper else True
 
             cur.close()
             return result
