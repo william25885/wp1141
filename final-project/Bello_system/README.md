@@ -18,12 +18,17 @@ Bello 是一款以資料庫為核心設計的網頁交友系統，提供一個�
   - 搜尋並添加好友
   - 好友請求管理（發送、接受、拒絕）
   - 好友列表與在線狀態
-  - 查看其他用戶的公開個人資料
+  - 查看其他用戶的公開個人資料（完整基本資料與詳細資料）
+  - 社群帳號顯示（願意交換時顯示所有社群帳號）
 
 ### 🔐 管理員功能
-- 聚會管理（查看、取消、結束）
-- 用戶管理（查看用戶詳情、移除用戶）
-- 聊天記錄查看（私人聊天、聚會聊天）
+- **聚會管理**：查看所有聚會、查看聚會詳情、取消聚會、結束聚會
+- **用戶管理**：瀏覽所有用戶列表、查看用戶詳細資料、移除用戶、支援 ID 搜尋
+- **聊天記錄查看**：
+  - 查看所有私人聊天對話列表（顯示雙方用戶、訊息數、最後訊息時間）
+  - 查看所有聚會聊天列表（顯示聚會資訊、訊息數、狀態）
+  - 點擊查看詳細聊天記錄
+  - 支援分頁瀏覽和 ID 搜尋
 
 ### 🛡️ 安全特性
 - JWT Token 認證機制
@@ -303,8 +308,19 @@ python app.py    # 啟動 Flask 開發伺服器
 
 ### 個人資料
 - `GET /user-profile/:user_id` - 獲取用戶資料
+- `GET /friends/user-profile/:user_id` - 獲取其他用戶的公開資料
 - `POST /update-profile` - 更新個人資料
 - `POST /update-avatar` - 更新頭像
+
+### 管理員相關
+- `GET /admin/users` - 獲取所有用戶列表（支援分頁和搜尋）
+- `GET /admin/users/:user_id` - 獲取用戶詳細資料
+- `POST /admin/users/:user_id/remove` - 移除用戶
+- `GET /admin/meetings` - 獲取所有聚會列表
+- `GET /admin/all-private-chats` - 獲取所有私人聊天對話列表
+- `POST /admin/chat-history` - 獲取指定兩個用戶間的聊天記錄
+- `GET /admin/all-meeting-chats` - 獲取所有有聊天記錄的聚會列表
+- `GET /admin/meeting-chat/:meeting_id` - 獲取指定聚會的聊天記錄
 
 所有需要認證的端點都需要在請求頭中包含 `Authorization: Bearer <token>`。
 
