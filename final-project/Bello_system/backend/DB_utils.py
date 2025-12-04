@@ -1937,3 +1937,114 @@ class DatabaseManager:
         except Exception as e:
             print(f"Error getting user online status: {str(e)}")
             return {'is_online': False, 'last_active': None}
+
+    def get_all_private_chat_conversations(self, page=1, limit=50):
+        """獲取所有私人聊天對話列表（管理員用）"""
+        try:
+            # 獲取總數
+            count_query = """
+                SELECT COUNT(DISTINCT LEAST("Sender_id", "Receiver_id") || '-' || GREATEST("Sender_id", "Receiver_id"))
+                FROM "PRIVATE_MESSAGE"
+            """
+            count_result = self.execute_query(count_query)
+            total_count = count_result[0][0] if count_result else 0
+            
+            # 獲取對話列表，包含最後一則訊息和訊息數量
+            query = """
+                WITH conversation_pairs AS (
+                    SELECT 
+                        LEAST("Sender_id", "Receiver_id") as user1_id,
+                        GREATEST("Sender_id", "Receiver_id") as user2_id,
+                        COUNT(*) as message_count,
+                        MAX("Sending_time") as last_message_time
+                    FROM "PRIVATE_MESSAGE"
+                    GROUP BY LEAST("Sender_id", "Receiver_id"), GREATEST("Sender_id", "Receiver_id")
+                )
+                SELECT 
+                    cp.user1_id,
+                    cp.user2_id,
+                    u1."User_name" as user1_name,
+                    u1."User_nickname" as user1_nickname,
+                    u2."User_name" as user2_name,
+                    u2."User_nickname" as user2_nickname,
+                    cp.message_count,
+                    cp.last_message_time
+                FROM conversation_pairs cp
+                JOIN "USER" u1 ON cp.user1_id = u1."User_id"
+                JOIN "USER" u2 ON cp.user2_id = u2."User_id"
+                ORDER BY cp.last_message_time DESC
+                LIMIT %s OFFSET %s
+            """
+            result = self.execute_query(query, (limit, (page - 1) * limit))
+            
+            conversations = []
+            for row in result:
+                conversations.append({
+                    'user1_id': row[0],
+                    'user2_id': row[1],
+                    'user1_name': row[2] or '',
+                    'user1_nickname': row[3] or '',
+                    'user2_name': row[4] or '',
+                    'user2_nickname': row[5] or '',
+                    'message_count': row[6],
+                    'last_message_time': row[7].strftime('%Y-%m-%d %H:%M:%S') if row[7] else None
+                })
+            
+            return conversations, total_count
+            
+        except Exception as e:
+            print(f"Error in get_all_private_chat_conversations: {str(e)}")
+            return [], 0
+
+    def get_all_meeting_chat_list(self, page=1, limit=50):
+        """獲取所有有聊天記錄的聚會列表（管理員用）"""
+        try:
+            # 獲取有聊天記錄的聚會總數
+            count_query = """
+                SELECT COUNT(DISTINCT cr."Meeting_id")
+                FROM "CHATTING_ROOM" cr
+            """
+            count_result = self.execute_query(count_query)
+            total_count = count_result[0][0] if count_result else 0
+            
+            # 獲取聚會列表，包含聊天訊息數量
+            query = """
+                SELECT 
+                    m."Meeting_id",
+                    m."Content",
+                    m."Event_date",
+                    m."Event_place",
+                    m."Meeting_type",
+                    m."Status",
+                    u."User_name" as holder_name,
+                    COUNT(cr."Sender_id") as message_count,
+                    MAX(cr."Sending_time") as last_message_time
+                FROM "MEETING" m
+                JOIN "USER" u ON m."Holder_id" = u."User_id"
+                JOIN "CHATTING_ROOM" cr ON m."Meeting_id" = cr."Meeting_id"
+                GROUP BY m."Meeting_id", m."Content", m."Event_date", m."Event_place", 
+                         m."Meeting_type", m."Status", u."User_name"
+                ORDER BY last_message_time DESC
+                LIMIT %s OFFSET %s
+            """
+            result = self.execute_query(query, (limit, (page - 1) * limit))
+            
+            meetings = []
+            for row in result:
+                meetings.append({
+                    'meeting_id': row[0],
+                    'content': row[1] or '',
+                    'event_date': row[2].strftime('%Y-%m-%d %H:%M') if row[2] else None,
+                    'event_place': row[3] or '',
+                    'meeting_type': row[4] or '',
+                    'status': row[5] or '',
+                    'holder_name': row[6] or '',
+                    'message_count': row[7],
+                    'last_message_time': row[8].strftime('%Y-%m-%d %H:%M:%S') if row[8] else None
+                })
+            
+            return meetings, total_count
+            
+        except Exception as e:
+            print(f"Error in get_all_meeting_chat_list: {str(e)}")
+            return [], 0

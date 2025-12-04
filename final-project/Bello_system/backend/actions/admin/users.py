@@ -16,7 +16,9 @@ def get_all_users():
         search = request.args.get('search', '')
         
         db = DatabaseManager()
-        users, total = db.get_all_users(page, limit, search)
+        # 如果 search 是空字串，轉為 None
+        search_param = search if search else None
+        users, total = db.get_all_users(page, limit, search_param)
         
         return jsonify({
             'status': 'success',
