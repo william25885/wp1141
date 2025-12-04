@@ -1215,17 +1215,17 @@ class DatabaseManager:
                 count_query = """
                     SELECT COUNT(*) 
                     FROM "USER" u
-                    WHERE u.User_id::text LIKE %s
+                    WHERE u."User_id"::text LIKE %s
                 """
                 count_result = self.execute_query(count_query, (f"%{search_id}%",))
                 total_count = count_result[0][0] if count_result else 0
 
                 query = """
-                    SELECT u.User_id, u.Account, u.User_name, u.User_nickname, 
-                           u.Email, u.Phone, u.Birthday, u.Sex, u.City
+                    SELECT u."User_id", u."Account", u."User_name", u."User_nickname", 
+                           u."Email", u."Phone", u."Birthday", u."Sex", u."City"
                     FROM "USER" u
-                    WHERE u.User_id::text LIKE %s
-                    ORDER BY u.User_id
+                    WHERE u."User_id"::text LIKE %s
+                    ORDER BY u."User_id"
                     LIMIT %s OFFSET %s
                 """
                 params = (f"%{search_id}%", limit, (page - 1) * limit)
@@ -1235,30 +1235,31 @@ class DatabaseManager:
                 total_count = count_result[0][0] if count_result else 0
 
                 query = """
-                    SELECT u.User_id, u.Account, u.User_name, u.User_nickname, 
-                           u.Email, u.Phone, u.Birthday, u.Sex, u.City
+                    SELECT u."User_id", u."Account", u."User_name", u."User_nickname", 
+                           u."Email", u."Phone", u."Birthday", u."Sex", u."City"
                     FROM "USER" u
-                    ORDER BY u.User_id
+                    ORDER BY u."User_id"
                     LIMIT %s OFFSET %s
                 """
                 params = (limit, (page - 1) * limit)
 
             result = self.execute_query(query, params)
             users = []
-            for row in result:
-                users.append(
-                    {
-                        "user_id": row[0],
-                        "account": row[1],
-                        "user_name": row[2],
-                        "user_nickname": row[3],
-                        "email": row[4],
-                        "phone": row[5],
-                        "birthday": row[6].strftime("%Y-%m-%d") if row[6] else None,
-                        "sex": row[7],
-                        "city": row[8],
-                    }
-                )
+            if result:
+                for row in result:
+                    users.append(
+                        {
+                            "user_id": row[0],
+                            "account": row[1],
+                            "user_name": row[2],
+                            "user_nickname": row[3],
+                            "email": row[4],
+                            "phone": row[5],
+                            "birthday": row[6].strftime("%Y-%m-%d") if row[6] else None,
+                            "sex": row[7],
+                            "city": row[8],
+                        }
+                    )
             return users, total_count
 
         except Exception as e:
@@ -1947,7 +1948,10 @@ class DatabaseManager:
                 FROM "PRIVATE_MESSAGE"
             """
             count_result = self.execute_query(count_query)
-            total_count = count_result[0][0] if count_result else 0
+            total_count = count_result[0][0] if count_result and count_result[0] else 0
+            
+            if total_count == 0:
+                return [], 0
             
             # 獲取對話列表，包含最後一則訊息和訊息數量
             query = """
@@ -1978,22 +1982,25 @@ class DatabaseManager:
             result = self.execute_query(query, (limit, (page - 1) * limit))
             
             conversations = []
-            for row in result:
-                conversations.append({
-                    'user1_id': row[0],
-                    'user2_id': row[1],
-                    'user1_name': row[2] or '',
-                    'user1_nickname': row[3] or '',
-                    'user2_name': row[4] or '',
-                    'user2_nickname': row[5] or '',
-                    'message_count': row[6],
-                    'last_message_time': row[7].strftime('%Y-%m-%d %H:%M:%S') if row[7] else None
-                })
+            if result:
+                for row in result:
+                    conversations.append({
+                        'user1_id': row[0],
+                        'user2_id': row[1],
+                        'user1_name': row[2] or '',
+                        'user1_nickname': row[3] or '',
+                        'user2_name': row[4] or '',
+                        'user2_nickname': row[5] or '',
+                        'message_count': row[6],
+                        'last_message_time': row[7].strftime('%Y-%m-%d %H:%M:%S') if row[7] else None
+                    })
             
             return conversations, total_count
             
         except Exception as e:
             print(f"Error in get_all_private_chat_conversations: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return [], 0
 
     def get_all_meeting_chat_list(self, page=1, limit=50):
@@ -2005,7 +2012,10 @@ class DatabaseManager:
                 FROM "CHATTING_ROOM" cr
             """
             count_result = self.execute_query(count_query)
-            total_count = count_result[0][0] if count_result else 0
+            total_count = count_result[0][0] if count_result and count_result[0] else 0
+            
+            if total_count == 0:
+                return [], 0
             
             # 獲取聚會列表，包含聊天訊息數量
             query = """
@@ -2030,21 +2040,24 @@ class DatabaseManager:
             result = self.execute_query(query, (limit, (page - 1) * limit))
             
             meetings = []
-            for row in result:
-                meetings.append({
-                    'meeting_id': row[0],
-                    'content': row[1] or '',
-                    'event_date': row[2].strftime('%Y-%m-%d %H:%M') if row[2] else None,
-                    'event_place': row[3] or '',
-                    'meeting_type': row[4] or '',
-                    'status': row[5] or '',
-                    'holder_name': row[6] or '',
-                    'message_count': row[7],
-                    'last_message_time': row[8].strftime('%Y-%m-%d %H:%M:%S') if row[8] else None
-                })
+            if result:
+                for row in result:
+                    meetings.append({
+                        'meeting_id': row[0],
+                        'content': row[1] or '',
+                        'event_date': row[2].strftime('%Y-%m-%d %H:%M') if row[2] else None,
+                        'event_place': row[3] or '',
+                        'meeting_type': row[4] or '',
+                        'status': row[5] or '',
+                        'holder_name': row[6] or '',
+                        'message_count': row[7],
+                        'last_message_time': row[8].strftime('%Y-%m-%d %H:%M:%S') if row[8] else None
+                    })
             
             return meetings, total_count
             
         except Exception as e:
             print(f"Error in get_all_meeting_chat_list: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return [], 0
