@@ -65,7 +65,7 @@
 
 <script>
 import UserMeetingCard from '@/components/UserMeetingCard.vue'
-import { apiUrl } from '@/config/api'
+import { getUser, apiGet, apiPost } from '@/utils/api'
 
 export default {
   name: 'MyMeetingsView',
@@ -83,9 +83,12 @@ export default {
     }
   },
   created() {
-    const user = JSON.parse(localStorage.getItem('user'))
+    const user = getUser()
     if (user) {
       this.currentUserId = user.user_id
+    } else {
+      this.$router.push('/login')
+      return
     }
     this.fetchMeetings()
   },
@@ -111,13 +114,13 @@ export default {
     },
     async fetchMeetings() {
       try {
-        const user = JSON.parse(localStorage.getItem('user'))
+        const user = getUser()
         if (!user || !user.user_id) {
           this.$router.push('/login')
           return
         }
-        const response = await fetch(apiUrl(`my-meetings/${user.user_id}`))
-        const data = await response.json()
+        // 使用 apiGet 自動添加 token
+        const data = await apiGet(`my-meetings/${user.user_id}`)
         if (data.status === 'success') {
           console.log('My meetings:', data.meetings)
           this.meetings = {
@@ -126,11 +129,15 @@ export default {
             cancelled: data.meetings.cancelled || []
           }
         } else {
-          alert(data.message)
+          alert(data.message || '獲取聚會列表失敗')
         }
       } catch (error) {
         console.error('Error fetching meetings:', error)
-        alert('獲取聚會列表失敗')
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login')
+        } else {
+          alert('獲取聚會列表失敗')
+        }
       }
     },
     async leaveMeeting(meetingId) {
@@ -139,50 +146,48 @@ export default {
       }
       
       try {
-        const user = JSON.parse(localStorage.getItem('user'))
-        const response = await fetch(apiUrl('leave-meeting'), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            meeting_id: meetingId,
-            user_id: user.user_id
-          })
+        // 使用 apiPost 自動添加 token，不需要傳 user_id（後端會從 token 獲取）
+        const data = await apiPost('leave-meeting', {
+          meeting_id: meetingId
         })
         
-        const data = await response.json()
         if (data.status === 'success') {
           alert('已退出聚會')
           this.fetchMeetings()
         } else {
-          alert(data.message)
+          alert(data.message || '退出聚會失敗')
         }
       } catch (error) {
         console.error('Error leaving meeting:', error)
-        alert('退出聚會失敗，請稍後再試')
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login')
+        } else {
+          alert('退出聚會失敗，請稍後再試')
+        }
       }
     },
     async cancelMeeting(meetingId) {
       if (!confirm('確定要取消這個聚會嗎？')) return;
       
       try {
-        const response = await fetch(apiUrl('cancel-meeting'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ meeting_id: meetingId })
+        // 使用 apiPost 自動添加 token
+        const data = await apiPost('cancel-meeting', {
+          meeting_id: meetingId
         });
         
-        const data = await response.json();
         if (data.status === 'success') {
           alert('聚會已取消');
           this.fetchMeetings();
         } else {
-          alert(data.message);
+          alert(data.message || '取消聚會失敗');
         }
       } catch (error) {
         console.error('Error canceling meeting:', error);
-        alert('取消聚會失敗');
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login');
+        } else {
+          alert('取消聚會失敗');
+        }
       }
     },
     
@@ -190,22 +195,24 @@ export default {
       if (!confirm('確定要結束這個聚會嗎？')) return;
       
       try {
-        const response = await fetch(apiUrl('finish-meeting'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ meeting_id: meetingId })
+        // 使用 apiPost 自動添加 token
+        const data = await apiPost('finish-meeting', {
+          meeting_id: meetingId
         });
         
-        const data = await response.json();
         if (data.status === 'success') {
           alert('聚會已結束');
           this.fetchMeetings();
         } else {
-          alert(data.message);
+          alert(data.message || '結束聚會失敗');
         }
       } catch (error) {
         console.error('Error finishing meeting:', error);
-        alert('結束聚會失敗');
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login');
+        } else {
+          alert('結束聚會失敗');
+        }
       }
     }
   }
