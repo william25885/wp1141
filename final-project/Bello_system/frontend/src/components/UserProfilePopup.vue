@@ -239,8 +239,8 @@ export default {
           this.friendshipStatus = 'none'
         }
         
-        // 獲取用戶公開資料
-        const profileData = await apiGet(`user-profile/${this.userId}`)
+        // 獲取用戶公開資料（使用 friends/user-profile 路由，專門用於查看其他用戶的公開資料）
+        const profileData = await apiGet(`friends/user-profile/${this.userId}`)
         console.log('User profile API response:', profileData)
         if (profileData.status === 'success') {
           this.userProfile = profileData.profile || {}
