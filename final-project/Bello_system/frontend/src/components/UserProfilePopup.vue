@@ -222,7 +222,17 @@ export default {
         // 獲取好友狀態
         const statusData = await apiGet(`friends/status/${this.userId}`)
         if (statusData.status === 'success') {
-          this.friendshipStatus = statusData.is_friend ? 'accepted' : statusData.status
+          // 確保狀態正確映射
+          if (statusData.is_friend) {
+            this.friendshipStatus = 'accepted'
+          } else if (statusData.status) {
+            this.friendshipStatus = statusData.status
+          } else {
+            this.friendshipStatus = 'none'
+          }
+          console.log('Friendship status loaded:', this.friendshipStatus, statusData)
+        } else {
+          this.friendshipStatus = 'none'
         }
         
         // 獲取在線狀態
@@ -238,16 +248,28 @@ export default {
     },
     
     async addFriend() {
+      // 先檢查當前狀態，避免重複發送
+      if (this.friendshipStatus === 'pending_sent') {
+        alert('您已經發送過好友請求了')
+        return
+      }
+      
+      if (this.friendshipStatus === 'accepted') {
+        alert('你們已經是好友了')
+        return
+      }
+      
       this.actionLoading = true
       try {
         // 確保 friend_id 是數字
         const friendId = parseInt(this.userId)
         if (isNaN(friendId)) {
           alert('無效的用戶ID')
+          this.actionLoading = false
           return
         }
         
-        console.log('Sending friend request to:', friendId)
+        console.log('Sending friend request to:', friendId, 'Current status:', this.friendshipStatus)
         const data = await apiPost('friends/add', { friend_id: friendId })
         console.log('Friend request response:', data)
         
@@ -256,6 +278,12 @@ export default {
           this.$emit('friend-updated')
           alert('好友請求已發送！')
         } else {
+          // 如果後端返回「已有待處理的好友請求」，更新狀態
+          if (data.message && data.message.includes('已有待處理')) {
+            this.friendshipStatus = 'pending_sent'
+            // 重新載入狀態以確保同步
+            await this.loadUserInfo()
+          }
           alert(data.message || '發送好友請求失敗')
         }
       } catch (error) {
