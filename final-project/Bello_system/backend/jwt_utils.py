@@ -87,6 +87,10 @@ def require_auth(f):
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        # 跳過 OPTIONS 請求（CORS preflight）
+        if request.method == 'OPTIONS':
+            return f(*args, **kwargs)
+            
         token = get_token_from_request()
         
         if not token:
@@ -126,6 +130,10 @@ def require_admin(f):
     @wraps(f)
     @require_auth
     def decorated_function(*args, **kwargs):
+        # 跳過 OPTIONS 請求（CORS preflight）
+        if request.method == 'OPTIONS':
+            return f(*args, **kwargs)
+            
         if request.current_user['role'] != 'Admin':
             return jsonify({
                 'status': 'error',

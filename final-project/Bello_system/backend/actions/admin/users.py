@@ -4,9 +4,12 @@ from jwt_utils import require_admin
 
 admin_users = Blueprint("admin_users", __name__)
 
-@admin_users.route('/admin/users', methods=['GET'])
+@admin_users.route('/admin/users', methods=['GET', 'OPTIONS'])
 @require_admin
 def get_all_users():
+    if request.method == 'OPTIONS':
+        return '', 204
+        
     try:
         page = request.args.get('page', 1, type=int)
         limit = request.args.get('limit', 100, type=int)
@@ -28,9 +31,12 @@ def get_all_users():
             'message': str(e)
         }), 500
 
-@admin_users.route('/admin/users/<int:user_id>', methods=['GET'])
+@admin_users.route('/admin/users/<int:user_id>', methods=['GET', 'OPTIONS'])
 @require_admin
 def get_user_details(user_id):
+    if request.method == 'OPTIONS':
+        return '', 204
+        
     try:
         db = DatabaseManager()
         basic_info = db.get_user_basic_info(user_id)
