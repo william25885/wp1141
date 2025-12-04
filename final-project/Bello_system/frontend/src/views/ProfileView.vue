@@ -2,8 +2,18 @@
   <div class="profile-container">
     <h2 class="mb-4">編輯個人資料</h2>
     
+    <!-- 載入中狀態 -->
+    <div v-if="loading" class="loading-container">
+      <div class="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">載入中...</span>
+        </div>
+        <p class="mt-3 text-muted">正在載入個人資料...</p>
+      </div>
+    </div>
+    
     <!-- 頭像區塊 -->
-    <div class="avatar-section mb-4">
+    <div v-else class="avatar-section mb-4">
       <div class="avatar-wrapper" @click="toggleAvatarMenu">
         <div class="avatar-circle-large" v-if="!userData.avatar_url">
           {{ getAvatarText() }}
@@ -240,6 +250,7 @@ export default {
   name: 'ProfileView',
   data() {
     return {
+      loading: true,
       userData: {},
       profileData: {},
       showAvatarMenu: false,
@@ -467,6 +478,7 @@ export default {
     },
     
     async fetchUserData() {
+      this.loading = true;
       try {
         const user = getUser();
         
@@ -504,6 +516,8 @@ export default {
         } else {
           alert('獲取用戶資料失敗');
         }
+      } finally {
+        this.loading = false;
       }
     },
     async addSnsAccount() {
@@ -684,6 +698,23 @@ export default {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
+}
+
+/* ======= 載入狀態樣式 ======= */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.loading-spinner {
+  text-align: center;
+}
+
+.loading-spinner .spinner-border {
+  width: 3rem;
+  height: 3rem;
 }
 
 /* ======= 頭像區塊樣式 ======= */
