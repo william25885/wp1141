@@ -319,7 +319,7 @@ def get_user_status(target_user_id):
             'message': str(e)
         }), 500
 
-@friendship.route('/user-profile/<int:target_user_id>', methods=['GET'])
+@friendship.route('/friends/user-profile/<int:target_user_id>', methods=['GET'])
 @require_auth
 def get_user_public_profile(target_user_id):
     """獲取指定用戶的公開個人資料"""
