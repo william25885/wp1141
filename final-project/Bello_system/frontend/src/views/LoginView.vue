@@ -25,14 +25,21 @@
     <!-- Google 登入按鈕 -->
     <div class="text-center">
       <!-- LINE 內嵌瀏覽器提示 -->
-      <div v-if="isLineBrowser" class="line-browser-warning alert alert-warning">
-        <p class="mb-2"><strong>⚠️ 檢測到 LINE 內嵌瀏覽器</strong></p>
-        <p class="mb-2 small">Google 登入在 LINE 內嵌瀏覽器中無法使用。請使用以下方式：</p>
+      <div v-if="isLineBrowser || showLineWarning" class="line-browser-warning alert alert-warning">
+        <p class="mb-2"><strong>⚠️ 檢測到內嵌瀏覽器</strong></p>
+        <p class="mb-2 small">Google 登入在內嵌瀏覽器（如 LINE、Facebook）中無法使用。請使用以下方式：</p>
         <button 
           class="btn btn-sm btn-primary" 
           @click="openInExternalBrowser"
         >
           在外部瀏覽器開啟
+        </button>
+        <button 
+          v-if="!isLineBrowser"
+          class="btn btn-sm btn-outline-secondary mt-2 d-block mx-auto" 
+          @click="showLineWarning = false"
+        >
+          我仍要嘗試
         </button>
       </div>
       
@@ -41,6 +48,13 @@
         <div id="google-signin-btn" class="google-btn-container"></div>
         <p v-if="googleLoading" class="text-muted mt-2">正在載入 Google 登入...</p>
         <p v-if="googleError" class="text-danger mt-2">{{ googleError }}</p>
+        <button 
+          v-if="googleError && googleError.includes('403') || googleError.includes('disallowed')"
+          class="btn btn-sm btn-warning mt-2" 
+          @click="showLineWarning = true"
+        >
+          在內嵌瀏覽器中遇到問題？點擊這裡
+        </button>
       </div>
     </div>
   </div>
@@ -59,7 +73,8 @@ export default {
       googleClientId: null,
       googleLoading: true,
       googleError: null,
-      isLineBrowser: false
+      isLineBrowser: false,
+      showLineWarning: false
     }
   },
   mounted() {
@@ -74,13 +89,55 @@ export default {
     detectLineBrowser() {
       // 檢測是否為 LINE 內嵌瀏覽器
       const userAgent = navigator.userAgent || navigator.vendor || window.opera
-      // LINE 內嵌瀏覽器的 User-Agent 通常包含 "Line" 或 "LINE"
-      this.isLineBrowser = /Line|LINE/i.test(userAgent) && !/Chrome|Safari|Firefox|Edge/i.test(userAgent.split('Line')[0])
       
-      // 也檢測其他可能被封鎖的內嵌瀏覽器
-      if (!this.isLineBrowser) {
-        // 檢測 Facebook、Instagram 等內嵌瀏覽器
-        this.isLineBrowser = /FBAN|FBAV|Instagram|FB_IAB|FB4A/i.test(userAgent)
+      // 調試：輸出 User-Agent 以便檢查
+      console.log('User-Agent:', userAgent)
+      
+      // LINE 內嵌瀏覽器的多種檢測方式
+      // 1. 直接檢測 LINE 相關標識
+      const hasLine = /Line|LINE/i.test(userAgent)
+      
+      // 2. 檢測 LINE 特定的 User-Agent 模式
+      // LINE iOS: 通常包含 "Line/" 或 "LINE/"
+      // LINE Android: 可能包含 "Line/" 或特定的版本號
+      const isLineIOS = /Line\/|LINE\//i.test(userAgent)
+      const isLineAndroid = /Line\/\d|LINE\/\d/i.test(userAgent)
+      
+      // 3. 檢測是否在 LINE 的 WebView 中（通過 referrer 或其他方式）
+      const referrer = document.referrer || ''
+      const isLineWebView = referrer.includes('line.me') || 
+                           referrer.includes('line.naver.jp') ||
+                           referrer.includes('line-apps.com')
+      
+      // 4. 檢測 window 對象的特殊屬性（某些內嵌瀏覽器會設置）
+      const hasLineWindowProps = window.Line || window.LINE || window.__LINE__
+      
+      // 5. 檢測其他可能被封鎖的內嵌瀏覽器
+      const isFacebookBrowser = /FBAN|FBAV|FB_IAB|FB4A/i.test(userAgent)
+      const isInstagramBrowser = /Instagram/i.test(userAgent)
+      const isTwitterBrowser = /Twitter/i.test(userAgent)
+      
+      // 綜合判斷：如果是 LINE 相關且不是標準瀏覽器
+      this.isLineBrowser = (hasLine || isLineIOS || isLineAndroid || isLineWebView || hasLineWindowProps) ||
+                          isFacebookBrowser || isInstagramBrowser || isTwitterBrowser
+      
+      // 如果檢測到，輸出調試信息
+      if (this.isLineBrowser) {
+        console.log('檢測到內嵌瀏覽器:', {
+          hasLine,
+          isLineIOS,
+          isLineAndroid,
+          isLineWebView,
+          hasLineWindowProps,
+          isFacebookBrowser,
+          isInstagramBrowser,
+          isTwitterBrowser,
+          userAgent,
+          referrer
+        })
+      } else {
+        // 即使沒檢測到，也輸出 User-Agent 以便調試
+        console.log('未檢測到內嵌瀏覽器，User-Agent:', userAgent, 'Referrer:', referrer)
       }
     },
     
@@ -137,24 +194,32 @@ export default {
     renderGoogleButton() {
       if (!this.googleClientId) return
       
-      window.google.accounts.id.initialize({
-        client_id: this.googleClientId,
-        callback: this.handleGoogleCallback,
-        auto_select: false,
-        cancel_on_tap_outside: true
-      })
-      
-      window.google.accounts.id.renderButton(
-        document.getElementById('google-signin-btn'),
-        {
-          theme: 'outline',
-          size: 'large',
-          width: 300,
-          text: 'signin_with',
-          shape: 'rectangular',
-          logo_alignment: 'left'
-        }
-      )
+      try {
+        window.google.accounts.id.initialize({
+          client_id: this.googleClientId,
+          callback: this.handleGoogleCallback,
+          auto_select: false,
+          cancel_on_tap_outside: true
+        })
+        
+        window.google.accounts.id.renderButton(
+          document.getElementById('google-signin-btn'),
+          {
+            theme: 'outline',
+            size: 'large',
+            width: 300,
+            text: 'signin_with',
+            shape: 'rectangular',
+            logo_alignment: 'left'
+          }
+        )
+      } catch (error) {
+        console.error('Failed to render Google button:', error)
+        // 如果渲染失敗，可能是內嵌瀏覽器
+        this.showLineWarning = true
+        this.googleLoading = false
+        this.googleError = '無法載入 Google 登入按鈕，可能是在內嵌瀏覽器中'
+      }
     },
     
     async handleGoogleCallback(response) {
@@ -173,7 +238,17 @@ export default {
         }
       } catch (error) {
         console.error('Google login error:', error)
-        alert('Google 登入失敗，請稍後再試')
+        const errorMessage = error.message || error.toString() || ''
+        
+        // 檢查是否是內嵌瀏覽器相關的錯誤
+        if (errorMessage.includes('403') || 
+            errorMessage.includes('disallowed_useragent') ||
+            errorMessage.includes('disallowed_useragent')) {
+          this.showLineWarning = true
+          this.googleError = 'Google 登入在內嵌瀏覽器中無法使用'
+        } else {
+          alert('Google 登入失敗，請稍後再試')
+        }
       }
     },
     
