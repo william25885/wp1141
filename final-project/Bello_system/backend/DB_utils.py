@@ -2023,13 +2023,13 @@ class DatabaseManager:
                 return [], 0
             
             # 獲取聚會列表，包含聊天訊息數量
+            # 注意：MEETING 表的 Content 欄位就是聚會類型（午餐、咖啡/下午茶等）
             query = """
                 SELECT 
                     m."Meeting_id",
                     m."Content",
                     m."Event_date",
                     m."Event_place",
-                    m."Meeting_type",
                     m."Status",
                     u."User_name" as holder_name,
                     COUNT(cr."Sender_id") as message_count,
@@ -2038,7 +2038,7 @@ class DatabaseManager:
                 JOIN "USER" u ON m."Holder_id" = u."User_id"
                 JOIN "CHATTING_ROOM" cr ON m."Meeting_id" = cr."Meeting_id"
                 GROUP BY m."Meeting_id", m."Content", m."Event_date", m."Event_place", 
-                         m."Meeting_type", m."Status", u."User_name"
+                         m."Status", u."User_name"
                 ORDER BY last_message_time DESC
                 LIMIT %s OFFSET %s
             """
@@ -2049,14 +2049,14 @@ class DatabaseManager:
                 for row in result:
                     meetings.append({
                         'meeting_id': row[0],
-                        'content': row[1] or '',
-                        'event_date': row[2].strftime('%Y-%m-%d %H:%M') if row[2] else None,
+                        'content': row[1] or '',  # Content 就是聚會類型
+                        'event_date': row[2].strftime('%Y-%m-%d') if row[2] else None,
                         'event_place': row[3] or '',
-                        'meeting_type': row[4] or '',
-                        'status': row[5] or '',
-                        'holder_name': row[6] or '',
-                        'message_count': row[7],
-                        'last_message_time': row[8].strftime('%Y-%m-%d %H:%M:%S') if row[8] else None
+                        'meeting_type': row[1] or '',  # 用 Content 作為 meeting_type
+                        'status': row[4] or '',
+                        'holder_name': row[5] or '',
+                        'message_count': row[6],
+                        'last_message_time': row[7].strftime('%Y-%m-%d %H:%M:%S') if row[7] else None
                     })
             
             return meetings, total_count
