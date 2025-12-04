@@ -159,19 +159,31 @@ export default {
       const referrer = document.referrer || ''
       const isLineWebView = referrer.includes('line.me') || 
                            referrer.includes('line.naver.jp') ||
-                           referrer.includes('line-apps.com')
+                           referrer.includes('line-apps.com') ||
+                           referrer.includes('linecorp.com')
       
       // 4. 檢測 window 對象的特殊屬性（某些內嵌瀏覽器會設置）
       const hasLineWindowProps = window.Line || window.LINE || window.__LINE__
       
-      // 5. 檢測其他可能被封鎖的內嵌瀏覽器
+      // 5. 檢測用戶語言/地區（日本用戶更可能使用 LINE）
+      const userLanguage = navigator.language || navigator.userLanguage || ''
+      const isJapaneseLocale = userLanguage.startsWith('ja')
+      
+      // 6. 檢測其他可能被封鎖的內嵌瀏覽器
       const isFacebookBrowser = /FBAN|FBAV|FB_IAB|FB4A/i.test(userAgent)
       const isInstagramBrowser = /Instagram/i.test(userAgent)
       const isTwitterBrowser = /Twitter/i.test(userAgent)
       
       // 綜合判斷：如果是 LINE 相關且不是標準瀏覽器
+      // 注意：在日本地區，即使沒有明確檢測到 LINE，也可能會遇到 403 錯誤
+      // 所以我們會通過錯誤處理來捕獲這種情況
       this.isLineBrowser = (hasLine || isLineIOS || isLineAndroid || isLineWebView || hasLineWindowProps) ||
                           isFacebookBrowser || isInstagramBrowser || isTwitterBrowser
+      
+      // 如果是日本地區，記錄以便調試
+      if (isJapaneseLocale && !this.isLineBrowser) {
+        console.log('檢測到日本地區用戶，但未檢測到內嵌瀏覽器')
+      }
       
       // 如果檢測到，輸出調試信息
       if (this.isLineBrowser) {
@@ -317,10 +329,21 @@ export default {
         )
       } catch (error) {
         console.error('Failed to render Google button:', error)
-        // 如果渲染失敗，可能是內嵌瀏覽器
-        this.showLineWarning = true
+        const errorMessage = error.message || error.toString() || ''
+        
+        // 如果渲染失敗，可能是內嵌瀏覽器（在日本地區特別常見）
+        // 檢查是否是 403 相關錯誤
+        if (errorMessage.includes('403') || 
+            errorMessage.includes('disallowed') ||
+            errorMessage.includes('useragent')) {
+          this.showLineWarning = true
+          this.googleError = 'Google 登入在內嵌瀏覽器中無法使用'
+        } else {
+          // 其他錯誤也顯示警告，因為可能是內嵌瀏覽器導致的
+          this.showLineWarning = true
+          this.googleError = '無法載入 Google 登入按鈕，可能是在內嵌瀏覽器中'
+        }
         this.googleLoading = false
-        this.googleError = '無法載入 Google 登入按鈕，可能是在內嵌瀏覽器中'
       }
     },
     
@@ -341,13 +364,17 @@ export default {
       } catch (error) {
         console.error('Google login error:', error)
         const errorMessage = error.message || error.toString() || ''
+        const errorResponse = error.response || error.data || {}
         
-        // 檢查是否是內嵌瀏覽器相關的錯誤
+        // 檢查是否是內嵌瀏覽器相關的錯誤（403 錯誤）
+        // 這在日本地區特別常見，因為 LINE 內嵌瀏覽器很流行
         if (errorMessage.includes('403') || 
             errorMessage.includes('disallowed_useragent') ||
-            errorMessage.includes('disallowed_useragent')) {
+            errorMessage.includes('disallowed_useragent') ||
+            errorResponse.status === 403 ||
+            (errorResponse.message && errorResponse.message.includes('403'))) {
           this.showLineWarning = true
-          this.googleError = 'Google 登入在內嵌瀏覽器中無法使用'
+          this.googleError = 'Google 登入在內嵌瀏覽器（如 LINE、Facebook）中無法使用。請在外部瀏覽器中開啟。'
         } else {
           alert('Google 登入失敗，請稍後再試')
         }
