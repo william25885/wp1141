@@ -92,6 +92,11 @@ const routes = [
     name: 'AdminMeetingChatRecords',
     component: () => import('@/views/AdminMeetingChatRecordsView.vue'),
     meta: { requiresAdmin: true }
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('../views/NotFoundView.vue')
   }
 ]
 
