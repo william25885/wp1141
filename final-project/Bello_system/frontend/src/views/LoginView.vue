@@ -98,7 +98,7 @@
 
 <script>
 import { apiUrl } from '@/config/api'
-import { setAuth, apiGet, apiPost } from '@/utils/api'
+import { getUser, setAuth, apiGet, apiPost } from '@/utils/api'
 
 export default {
   name: 'LoginView',
@@ -117,6 +117,9 @@ export default {
     }
   },
   mounted() {
+    // 檢查是否已登入，如果已登入則重定向
+    this.checkLoginAndRedirect()
+    
     this.detectLineBrowser()
     if (!this.isLineBrowser) {
       this.initGoogleSignIn()
@@ -125,6 +128,16 @@ export default {
     }
   },
   methods: {
+    checkLoginAndRedirect() {
+      // 檢查是否已登入
+      const user = getUser()
+      if (user) {
+        // 已登入，重定向到對應的首頁
+        const homeRoute = user.role === 'Admin' ? '/admin-lobby' : '/lobby'
+        this.$router.replace(homeRoute)
+      }
+    },
+    
     detectLineBrowser() {
       // 檢測是否為 LINE 內嵌瀏覽器
       const userAgent = navigator.userAgent || navigator.vendor || window.opera

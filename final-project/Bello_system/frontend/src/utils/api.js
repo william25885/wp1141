@@ -63,9 +63,18 @@ export async function apiRequest(endpoint, options = {}, requireAuth = true) {
   // 如果 token 過期或無效，清除認證信息
   if (response.status === 401 && requireAuth) {
     clearAuth()
-    // 可以選擇重定向到登入頁面
-    if (window.location.pathname !== '/login') {
-      window.location.href = '/login'
+    // 觸發自定義事件，讓組件處理重定向
+    // 這樣可以避免在 apiRequest 中直接操作 window.location
+    // 組件可以通過路由守衛或監聽事件來處理重定向
+    window.dispatchEvent(new CustomEvent('auth-expired'))
+    
+    // 如果不在登入頁面，使用 window.location 進行重定向
+    // 這是因為此時可能還沒有 router 實例
+    if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+      // 使用 setTimeout 避免在請求過程中立即重定向
+      setTimeout(() => {
+        window.location.href = '/login'
+      }, 100)
     }
   }
 
