@@ -1942,10 +1942,10 @@ class DatabaseManager:
     def get_all_private_chat_conversations(self, page=1, limit=50):
         """獲取所有私人聊天對話列表（管理員用）"""
         try:
-            # 獲取總數（PRIVATE_MESSAGE 表和欄位名都沒有用雙引號建立，用小寫）
+            # 獲取總數
             count_query = """
-                SELECT COUNT(DISTINCT LEAST(sender_id, receiver_id) || '-' || GREATEST(sender_id, receiver_id))
-                FROM private_message
+                SELECT COUNT(DISTINCT LEAST("Sender_id", "Receiver_id") || '-' || GREATEST("Sender_id", "Receiver_id"))
+                FROM "PRIVATE_MESSAGE"
             """
             count_result = self.execute_query(count_query)
             total_count = count_result[0][0] if count_result and count_result[0] else 0
@@ -1957,12 +1957,12 @@ class DatabaseManager:
             query = """
                 WITH conversation_pairs AS (
                     SELECT 
-                        LEAST(sender_id, receiver_id) as user1_id,
-                        GREATEST(sender_id, receiver_id) as user2_id,
+                        LEAST("Sender_id", "Receiver_id") as user1_id,
+                        GREATEST("Sender_id", "Receiver_id") as user2_id,
                         COUNT(*) as message_count,
-                        MAX(sending_time) as last_message_time
-                    FROM private_message
-                    GROUP BY LEAST(sender_id, receiver_id), GREATEST(sender_id, receiver_id)
+                        MAX("Sending_time") as last_message_time
+                    FROM "PRIVATE_MESSAGE"
+                    GROUP BY LEAST("Sender_id", "Receiver_id"), GREATEST("Sender_id", "Receiver_id")
                 )
                 SELECT 
                     cp.user1_id,
@@ -2006,10 +2006,10 @@ class DatabaseManager:
     def get_all_meeting_chat_list(self, page=1, limit=50):
         """獲取所有有聊天記錄的聚會列表（管理員用）"""
         try:
-            # 獲取有聊天記錄的聚會總數（chatting_room 表和欄位名都沒有用雙引號建立，用小寫）
+            # 獲取有聊天記錄的聚會總數
             count_query = """
-                SELECT COUNT(DISTINCT cr.meeting_id)
-                FROM chatting_room cr
+                SELECT COUNT(DISTINCT cr."Meeting_id")
+                FROM "CHATTING_ROOM" cr
             """
             count_result = self.execute_query(count_query)
             total_count = count_result[0][0] if count_result and count_result[0] else 0
@@ -2027,11 +2027,11 @@ class DatabaseManager:
                     m."Meeting_type",
                     m."Status",
                     u."User_name" as holder_name,
-                    COUNT(cr.sender_id) as message_count,
-                    MAX(cr.sending_time) as last_message_time
+                    COUNT(cr."Sender_id") as message_count,
+                    MAX(cr."Sending_time") as last_message_time
                 FROM "MEETING" m
                 JOIN "USER" u ON m."Holder_id" = u."User_id"
-                JOIN chatting_room cr ON m."Meeting_id" = cr.meeting_id
+                JOIN "CHATTING_ROOM" cr ON m."Meeting_id" = cr."Meeting_id"
                 GROUP BY m."Meeting_id", m."Content", m."Event_date", m."Event_place", 
                          m."Meeting_type", m."Status", u."User_name"
                 ORDER BY last_message_time DESC
