@@ -3,9 +3,10 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
       <div class="container">
         <router-link class="navbar-brand" :to="homeRoute">Bello</router-link>
-        <div class="d-flex" v-if="!isAuthPage">
+        <div class="d-flex">
           <template v-if="!isLoggedIn">
-            <router-link to="/register" class="btn btn-outline-primary">註冊新帳號</router-link>
+            <router-link v-if="$route.path !== '/register'" to="/register" class="btn btn-outline-primary me-2">註冊新帳號</router-link>
+            <router-link v-if="$route.path !== '/login'" to="/login" class="btn btn-outline-secondary">登入</router-link>
           </template>
           <template v-else>
             <router-link :to="homeRoute" class="btn btn-secondary me-2">回到主頁</router-link>
