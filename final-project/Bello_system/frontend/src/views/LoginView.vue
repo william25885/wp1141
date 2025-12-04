@@ -31,13 +31,6 @@ export default {
       password: ''
     }
   },
-  created() {
-    // 如果用戶已登入，直接導向到 lobby
-    const user = getUser()
-    if (user) {
-      this.$router.push(user.role === 'Admin' ? '/admin-lobby' : '/lobby')
-    }
-  },
   methods: {
     async handleLogin() {
       try {

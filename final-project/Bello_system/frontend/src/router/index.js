@@ -3,7 +3,14 @@ import { createRouter, createWebHistory } from 'vue-router'
 const routes = [
   {
     path: '/',
-    redirect: '/login'
+    redirect: (to) => {
+      // 檢查登入狀態，決定重定向到哪裡
+      const user = getUser()
+      if (user) {
+        return user.role === 'Admin' ? '/admin-lobby' : '/lobby'
+      }
+      return '/login'
+    }
   },
   {
     path: '/login',
@@ -97,19 +104,33 @@ const router = createRouter({
 import { getUser } from '@/utils/api'
 
 router.beforeEach((to, from, next) => {
-  console.log('Navigation guard - from:', from.path)
-  console.log('Navigation guard - to:', to.path)
-  console.log('Navigation guard - matched routes:', to.matched)
+  const user = getUser()
   
-  if (to.meta.requiresAdmin) {
-    const user = getUser()
-    console.log('Current user:', user)
-    if (!user || user.role !== 'Admin') {
-      console.log('Unauthorized access, redirecting to login')
+  // 檢查是否需要認證
+  if (to.meta.requiresAuth) {
+    if (!user) {
+      // 未登入，重定向到登入頁
       next('/login')
       return
     }
   }
+  
+  // 檢查是否需要管理員權限
+  if (to.meta.requiresAdmin) {
+    if (!user || user.role !== 'Admin') {
+      // 不是管理員，重定向到登入頁
+      next('/login')
+      return
+    }
+  }
+  
+  // 如果已登入且訪問登入/註冊頁，重定向到首頁
+  if ((to.path === '/login' || to.path === '/register') && user) {
+    const homeRoute = user.role === 'Admin' ? '/admin-lobby' : '/lobby'
+    next(homeRoute)
+    return
+  }
+  
   next()
 })
 
