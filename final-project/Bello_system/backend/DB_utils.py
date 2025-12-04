@@ -1863,7 +1863,7 @@ class DatabaseManager:
         """搜尋用戶以添加好友"""
         try:
             sql = """
-                SELECT 
+                SELECT DISTINCT ON (u."User_id")
                     u."User_id", 
                     u."User_name", 
                     u."User_nickname",
@@ -1886,6 +1886,7 @@ class DatabaseManager:
                       OR u."Account" ILIKE %s)
                 AND u."User_id" != %s
                 AND ur."User_id" IS NULL
+                ORDER BY u."User_id"
                 LIMIT %s
             """
             search_pattern = f"%{query}%"
