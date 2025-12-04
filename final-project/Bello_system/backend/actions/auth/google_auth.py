@@ -42,6 +42,9 @@ def google_login():
         email = idinfo.get('email', '')
         name = idinfo.get('name', '')
         picture = idinfo.get('picture', '')
+        given_name = idinfo.get('given_name', '')  # 名字
+        family_name = idinfo.get('family_name', '')  # 姓氏
+        locale = idinfo.get('locale', '')  # 地區設定
         
         db = DatabaseManager()
         
@@ -56,12 +59,15 @@ def google_login():
                 # 更新現有用戶的 Google ID 和頭像
                 db.link_google_account(user['user_id'], google_id, picture)
             else:
-                # 創建新的 Google 用戶
+                # 創建新的 Google 用戶，傳入更多資訊
                 user_id = db.create_google_user(
                     google_id=google_id,
                     email=email,
                     user_name=name,
-                    avatar_url=picture
+                    avatar_url=picture,
+                    given_name=given_name,
+                    family_name=family_name,
+                    locale=locale
                 )
                 
                 if not user_id:

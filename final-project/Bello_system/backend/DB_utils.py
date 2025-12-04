@@ -249,7 +249,8 @@ class DatabaseManager:
             print(f"Error getting user by email: {e}")
             return None
     
-    def create_google_user(self, google_id, email, user_name, avatar_url):
+    def create_google_user(self, google_id, email, user_name, avatar_url, 
+                          given_name=None, family_name=None, locale=None):
         """創建 Google 用戶"""
         try:
             # 獲取最大的 User_id
@@ -261,7 +262,16 @@ class DatabaseManager:
             account = f"google_{new_user_id}"
             
             # 使用 Google 名稱作為用戶名和暱稱
-            user_nickname = user_name if user_name else f"User{new_user_id}"
+            # 如果有 given_name 和 family_name，組合使用
+            if given_name and family_name:
+                full_name = f"{family_name}{given_name}"  # 中文習慣：姓在前
+                user_nickname = given_name  # 暱稱使用名字
+            elif user_name:
+                full_name = user_name
+                user_nickname = user_name
+            else:
+                full_name = f"User{new_user_id}"
+                user_nickname = f"User{new_user_id}"
             
             # 插入用戶資料（Google 用戶不需要密碼和其他必填欄位）
             insert_query = """
@@ -275,7 +285,7 @@ class DatabaseManager:
             from datetime import datetime
             result = self.execute_query(
                 insert_query,
-                (new_user_id, account, user_name, user_nickname, 
+                (new_user_id, account, full_name, user_nickname, 
                  email, datetime.now(), google_id, avatar_url)
             )
             self.conn.commit()
@@ -961,19 +971,33 @@ class DatabaseManager:
 
     def get_user_basic_info(self, user_id):
         query = """
-            SELECT "Account", "User_name", "User_nickname", "Email", "Phone", "Birthday"
+            SELECT "Account", "User_name", "User_nickname", "Email", "Phone", "Birthday", 
+                   "Nationality", "City", "Sex", "Avatar_url"
             FROM "USER"
             WHERE "User_id" = %s
         """
         result = self.execute_query(query, (user_id,))
         if result:
+            row = result[0]
+            # 安全處理可能為 NULL 的欄位
+            birthday = None
+            if row[5]:
+                try:
+                    birthday = row[5].strftime("%Y-%m-%d") if hasattr(row[5], 'strftime') else str(row[5])
+                except:
+                    birthday = str(row[5]) if row[5] else None
+            
             return {
-                "account": result[0][0],
-                "user_name": result[0][1],
-                "user_nickname": result[0][2],
-                "email": result[0][3],
-                "phone": result[0][4],
-                "birthday": result[0][5].strftime("%Y-%m-%d"),
+                "account": row[0] or "",
+                "user_name": row[1] or "",
+                "user_nickname": row[2] or "",
+                "email": row[3] or "",
+                "phone": row[4] or "",
+                "birthday": birthday or "",
+                "nationality": row[6] or "",
+                "city": row[7] or "",
+                "sex": row[8] or "",
+                "avatar_url": row[9] or ""
             }
         return None
 

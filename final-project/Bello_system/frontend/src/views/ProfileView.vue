@@ -8,14 +8,15 @@
         <h5 class="card-title mb-3">基本資料</h5>
         <div class="row">
           <div class="col-md-6">
-            <p><strong>帳號:</strong> {{ userData.account }}</p>
-            <p><strong>姓名:</strong> {{ userData.user_name }}</p>
-            <p><strong>暱稱:</strong> {{ userData.user_nickname }}</p>
+            <p><strong>帳號:</strong> {{ userData.account || '未設定' }}</p>
+            <p><strong>姓名:</strong> {{ userData.user_name || '未設定' }}</p>
+            <p><strong>暱稱:</strong> {{ userData.user_nickname || '未設定' }}</p>
           </div>
           <div class="col-md-6">
-            <p><strong>電子郵件:</strong> {{ userData.email }}</p>
-            <p><strong>電話:</strong> {{ userData.phone }}</p>
-            <p><strong>生日:</strong> {{ formatDate(userData.birthday) }}</p>
+            <p><strong>電子郵件:</strong> {{ userData.email || '未設定' }}</p>
+            <p><strong>電話:</strong> {{ userData.phone || '未設定' }}</p>
+            <p><strong>生日:</strong> {{ formatDate(userData.birthday) || '未設定' }}</p>
+            <p v-if="userData.avatar_url"><strong>頭像:</strong> <img :src="userData.avatar_url" alt="頭像" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;"></p>
           </div>
         </div>
       </div>
@@ -168,8 +169,20 @@ export default {
         const data = await apiGet(`user-profile/${user.user_id}`);
         console.log(data)
         if (data.status === 'success') {
-          this.userData = data.basic_info;
-          this.profileData = data.profile_info;
+          // 確保所有欄位都有預設值，避免顯示 undefined
+          this.userData = {
+            account: data.basic_info?.account || '',
+            user_name: data.basic_info?.user_name || '',
+            user_nickname: data.basic_info?.user_nickname || '',
+            email: data.basic_info?.email || '',
+            phone: data.basic_info?.phone || '',
+            birthday: data.basic_info?.birthday || '',
+            nationality: data.basic_info?.nationality || '',
+            city: data.basic_info?.city || '',
+            sex: data.basic_info?.sex || '',
+            avatar_url: data.basic_info?.avatar_url || ''
+          };
+          this.profileData = data.profile_info || {};
           await this.fetchSnsAccounts();
         } else {
           alert(data.message || '獲取用戶資料失敗');
