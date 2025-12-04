@@ -76,9 +76,14 @@
                   <span class="detail-label">婚姻狀態</span>
                   <span class="detail-value">{{ userProfile.married }}</span>
                 </div>
-                <div v-if="userProfile.sns" class="detail-item">
-                  <span class="detail-label">願意交換社群</span>
-                  <span class="detail-value">{{ userProfile.sns === 'YES' ? '是' : '否' }}</span>
+                <div v-if="userProfile.sns" class="detail-item" :class="{ 'full-width': userProfile.sns === 'YES' && userProfile.sns_accounts && userProfile.sns_accounts.length > 0 }">
+                  <span class="detail-label">社群帳號</span>
+                  <div v-if="userProfile.sns === 'YES' && userProfile.sns_accounts && userProfile.sns_accounts.length > 0" class="sns-accounts">
+                    <span v-for="(account, index) in userProfile.sns_accounts" :key="index" class="sns-badge">
+                      {{ account.sns_type }}: {{ account.sns_id }}
+                    </span>
+                  </div>
+                  <span v-else class="detail-value">無</span>
                 </div>
                 <div v-if="userProfile.university" class="detail-item full-width">
                   <span class="detail-label">學校</span>
@@ -504,6 +509,23 @@ export default {
   color: #4a5568;
   font-size: 0.9rem;
   line-height: 1.5;
+}
+
+.sns-accounts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.sns-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.25rem 0.6rem;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
 }
 
 .action-buttons {

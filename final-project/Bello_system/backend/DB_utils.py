@@ -1147,6 +1147,7 @@ class DatabaseManager:
             
             if detail_result:
                 detail_row = detail_result[0]
+                sns_willing = detail_row[8] or ''
                 profile.update({
                     'star_sign': detail_row[0] or '',
                     'mbti': detail_row[1] or '',
@@ -1156,9 +1157,16 @@ class DatabaseManager:
                     'interest': detail_row[5] or '',
                     'religion': detail_row[6] or '',
                     'married': detail_row[7] or '',
-                    'sns': detail_row[8] or '',
+                    'sns': sns_willing,
                     'find_meeting_type': detail_row[9] or ''
                 })
+                
+                # 如果願意交換社群 (sns = 'YES')，則獲取社群帳號
+                if sns_willing == 'YES':
+                    sns_accounts = self.get_sns_details(user_id)
+                    profile['sns_accounts'] = sns_accounts
+                else:
+                    profile['sns_accounts'] = []
             
             return profile
         except Exception as e:
