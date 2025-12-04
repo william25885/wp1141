@@ -88,16 +88,19 @@ def send_friend_request():
                 'message': result['message']
             })
         else:
+            print(f"Failed to send friend request: {result.get('message', 'Unknown error')}")
             return jsonify({
                 'status': 'error',
-                'message': result['message']
+                'message': result.get('message', '發送好友請求失敗')
             }), 400
         
     except Exception as e:
+        import traceback
         print(f"Error sending friend request: {str(e)}")
+        print(traceback.format_exc())
         return jsonify({
             'status': 'error',
-            'message': str(e)
+            'message': f'發送好友請求時發生錯誤: {str(e)}'
         }), 500
 
 @friendship.route('/friends/accept', methods=['POST'])

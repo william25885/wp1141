@@ -1530,6 +1530,11 @@ class DatabaseManager:
         """發送好友請求"""
         try:
             self._ensure_connection()
+            
+            # 確保參數是整數
+            user_id = int(user_id)
+            friend_id = int(friend_id)
+            
             # 檢查是否已經存在好友關係
             check_query = """
                 SELECT "Status" FROM "FRIENDSHIP"
@@ -1538,7 +1543,7 @@ class DatabaseManager:
             """
             result = self.execute_query(check_query, (user_id, friend_id, friend_id, user_id))
             
-            if result:
+            if result and len(result) > 0:
                 status = result[0][0]
                 if status == 'accepted':
                     return {'success': False, 'message': '你們已經是好友了'}
@@ -1557,9 +1562,16 @@ class DatabaseManager:
             return {'success': True, 'message': '好友請求已發送'}
             
         except Exception as e:
+            import traceback
             print(f"Error sending friend request: {str(e)}")
-            self.conn.rollback()
-            return {'success': False, 'message': str(e)}
+            print(f"User ID: {user_id}, Friend ID: {friend_id}")
+            print(traceback.format_exc())
+            if hasattr(self, 'conn'):
+                try:
+                    self.conn.rollback()
+                except:
+                    pass
+            return {'success': False, 'message': f'資料庫錯誤: {str(e)}'}
 
     def accept_friend_request(self, user_id, friend_id):
         """接受好友請求"""
