@@ -1,13 +1,16 @@
 from flask import Blueprint, request, jsonify
 from DB_utils import DatabaseManager
+from jwt_utils import require_auth
 
 update_profile = Blueprint("update_profile", __name__)
 
 @update_profile.route('/update-profile', methods=['POST'])
+@require_auth
 def update_user_profile():
     try:
         data = request.get_json()
-        user_id = data.get('user_id')
+        # 從 JWT token 獲取 user_id
+        user_id = request.current_user['user_id']
         updates = data.get('updates', [])
 
         print(f"Received update request for user {user_id}: {updates}")

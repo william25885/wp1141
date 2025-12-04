@@ -84,7 +84,7 @@
   </template>
   
   <script>
-import { apiUrl } from '@/config/api'
+import { apiPost, getUser } from '@/utils/api'
   export default {
     name: 'CreateMeetingView',
     data() {
@@ -106,26 +106,14 @@ import { apiUrl } from '@/config/api'
       }
     },
     created() {
-      try {
-        const userStr = localStorage.getItem('user')
-        if (!userStr) {
-          this.$router.push('/login')
-          return
-        }
-        
-        const user = JSON.parse(userStr)
-        if (!user || !user.user_id) {
-          localStorage.removeItem('user')
-          this.$router.push('/login')
-          return
-        }
-        
-        this.formData.holder_id = user.user_id
-      } catch (error) {
-        console.error('Error parsing user data:', error)
-        localStorage.removeItem('user')
+      // 使用新的 getUser 函數
+      const user = getUser()
+      if (!user || !user.user_id) {
         this.$router.push('/login')
+        return
       }
+      
+      this.formData.holder_id = user.user_id
     },
     methods: {
       async handleSubmit() {
@@ -135,23 +123,23 @@ import { apiUrl } from '@/config/api'
         }
   
         try {
-          const response = await fetch(apiUrl('create-meeting'), {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(this.formData)
-          })
-  
-          const data = await response.json()
+          // 使用新的 apiPost 函數，會自動添加 token
+          const data = await apiPost('create-meeting', this.formData)
+          
           if (data.status === 'success') {
             alert('聚會建立成功！')
             this.$router.push('/my-meetings')
           } else {
-            alert(data.message)
+            alert(data.message || '建立聚會失敗')
           }
         } catch (error) {
-          alert('建立聚會失敗，請稍後再試')
+          console.error('建立聚會錯誤:', error)
+          if (error.message && error.message.includes('token')) {
+            alert('認證失敗，請重新登入')
+            this.$router.push('/login')
+          } else {
+            alert('建立聚會失敗，請稍後再試')
+          }
         }
       }
     }

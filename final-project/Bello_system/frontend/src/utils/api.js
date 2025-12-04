@@ -77,6 +77,24 @@ export async function apiRequest(endpoint, options = {}, requireAuth = true) {
  */
 export async function apiGet(endpoint) {
   const response = await apiRequest(endpoint, { method: 'GET' })
+  
+  // 檢查響應狀態
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('認證失敗，請重新登入')
+    }
+    
+    try {
+      const errorData = await response.json()
+      throw new Error(errorData.message || '請求失敗')
+    } catch (e) {
+      if (e instanceof Error && e.message.includes('認證')) {
+        throw e
+      }
+      throw new Error(`請求失敗: ${response.status} ${response.statusText}`)
+    }
+  }
+  
   return response.json()
 }
 
@@ -100,6 +118,26 @@ export async function apiPost(endpoint, data, contentType = 'application/json') 
   }
 
   const response = await apiRequest(endpoint, options)
+  
+  // 檢查響應狀態
+  if (!response.ok) {
+    // 如果是 401，已經在 apiRequest 中處理了重定向
+    if (response.status === 401) {
+      throw new Error('認證失敗，請重新登入')
+    }
+    
+    // 嘗試解析錯誤訊息
+    try {
+      const errorData = await response.json()
+      throw new Error(errorData.message || '請求失敗')
+    } catch (e) {
+      if (e instanceof Error && e.message.includes('認證')) {
+        throw e
+      }
+      throw new Error(`請求失敗: ${response.status} ${response.statusText}`)
+    }
+  }
+  
   return response.json()
 }
 

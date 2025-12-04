@@ -1,9 +1,11 @@
 from flask import Blueprint, jsonify, request
 from DB_utils import DatabaseManager
+from jwt_utils import require_admin
 
 admin_chat_history = Blueprint("admin_chat_history", __name__)
 
 @admin_chat_history.route('/admin/chat-history', methods=['POST', 'OPTIONS'])
+@require_admin
 def get_chat_history():
     if request.method == 'OPTIONS':
         return '', 204
