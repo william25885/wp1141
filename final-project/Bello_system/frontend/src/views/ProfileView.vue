@@ -6,16 +6,59 @@
     <div class="card mb-4">
       <div class="card-body">
         <h5 class="card-title mb-3">基本資料</h5>
-        <div class="row">
+        <div class="row g-3">
           <div class="col-md-6">
-            <p><strong>帳號:</strong> {{ userData.account || '未設定' }}</p>
-            <p><strong>姓名:</strong> {{ userData.user_name || '未設定' }}</p>
-            <p><strong>暱稱:</strong> {{ userData.user_nickname || '未設定' }}</p>
+            <div class="mb-3">
+              <label class="form-label"><strong>帳號:</strong></label>
+              <input type="text" class="form-control" :value="userData.account || '未設定'" disabled>
+              <small class="text-muted">帳號無法修改</small>
+            </div>
+            <div class="mb-3">
+              <label class="form-label"><strong>姓名:</strong></label>
+              <input type="text" class="form-control" v-model="userData.user_name" placeholder="請輸入姓名">
+            </div>
+            <div class="mb-3">
+              <label class="form-label"><strong>暱稱:</strong></label>
+              <input type="text" class="form-control" v-model="userData.user_nickname" placeholder="請輸入暱稱">
+            </div>
           </div>
           <div class="col-md-6">
-            <p><strong>電子郵件:</strong> {{ userData.email || '未設定' }}</p>
-            <p><strong>電話:</strong> {{ userData.phone || '未設定' }}</p>
-            <p><strong>生日:</strong> {{ formatDate(userData.birthday) || '未設定' }}</p>
+            <div class="mb-3">
+              <label class="form-label"><strong>電子郵件:</strong></label>
+              <input type="email" class="form-control" :value="userData.email || '未設定'" disabled>
+              <small class="text-muted">電子郵件無法修改</small>
+            </div>
+            <div class="mb-3">
+              <label class="form-label"><strong>電話:</strong></label>
+              <input type="text" class="form-control" v-model="userData.phone" placeholder="請輸入電話號碼">
+            </div>
+            <div class="mb-3">
+              <label class="form-label"><strong>生日:</strong></label>
+              <input type="date" class="form-control" v-model="userData.birthday">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label"><strong>國籍:</strong></label>
+              <input type="text" class="form-control" v-model="userData.nationality" placeholder="請輸入國籍">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label"><strong>城市:</strong></label>
+              <input type="text" class="form-control" v-model="userData.city" placeholder="請輸入城市">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label"><strong>性別:</strong></label>
+              <select class="form-select" v-model="userData.sex">
+                <option value="">請選擇</option>
+                <option value="男">男</option>
+                <option value="女">女</option>
+                <option value="其他">其他</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -85,6 +128,13 @@
         <div class="text-center mt-4">
           <button class="btn btn-primary" @click="updateProfile">更新資料</button>
         </div>
+      </div>
+    </div>
+    
+    <!-- 更新基本資料的提交按鈕 -->
+    <div class="text-center mt-3">
+      <button class="btn btn-secondary" @click="updateBasicInfo">更新基本資料</button>
+    </div>
       </div>
     </div>
   </div>
@@ -264,6 +314,59 @@ export default {
       }
     },
 
+    async updateBasicInfo() {
+      try {
+        const updates = [];
+        
+        // 將基本資料轉換為 updates 陣列
+        if (this.userData.user_name) {
+          updates.push({ field: 'User_name', value: this.userData.user_name });
+        }
+        if (this.userData.user_nickname) {
+          updates.push({ field: 'User_nickname', value: this.userData.user_nickname });
+        }
+        if (this.userData.phone) {
+          updates.push({ field: 'Phone', value: this.userData.phone });
+        }
+        if (this.userData.birthday) {
+          updates.push({ field: 'Birthday', value: this.userData.birthday });
+        }
+        if (this.userData.nationality) {
+          updates.push({ field: 'Nationality', value: this.userData.nationality });
+        }
+        if (this.userData.city) {
+          updates.push({ field: 'City', value: this.userData.city });
+        }
+        if (this.userData.sex) {
+          updates.push({ field: 'Sex', value: this.userData.sex });
+        }
+
+        if (updates.length === 0) {
+          alert('請至少填寫一項基本資料');
+          return;
+        }
+
+        // 使用 apiPost，後端會從 token 獲取 user_id
+        const data = await apiPost('update-profile', {
+          updates: updates
+        });
+
+        if (data.status === 'success') {
+          alert('基本資料更新成功！');
+          await this.fetchUserData();
+        } else {
+          alert(data.message || '更新基本資料失敗');
+        }
+      } catch (error) {
+        console.error('Error updating basic info:', error);
+        if (error.message && error.message.includes('認證')) {
+          this.$router.push('/login');
+        } else {
+          alert('更新基本資料失敗');
+        }
+      }
+    },
+
     async updateProfile() {
       try {
         const updates = [];
@@ -275,13 +378,18 @@ export default {
           }
         }
 
+        if (updates.length === 0) {
+          alert('請至少填寫一項詳細資料');
+          return;
+        }
+
         // 使用 apiPost，後端會從 token 獲取 user_id
         const data = await apiPost('update-profile', {
           updates: updates
         });
 
         if (data.status === 'success') {
-          alert('更新成功！');
+          alert('詳細資料更新成功！');
           if (this.profileData.Sns === 'YES') {
             this.fetchUserData();
           }

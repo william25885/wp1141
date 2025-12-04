@@ -337,6 +337,33 @@ class DatabaseManager:
 
     # ==================== 用戶詳細資料相關方法 ====================
 
+    def update_user_basic_info(self, field, value, user_id):
+        """更新用戶基本資料（USER 表）"""
+        try:
+            self._ensure_connection()
+            
+            # 允許更新的基本資料欄位
+            allowed_fields = ['User_name', 'User_nickname', 'Phone', 'Birthday', 'Nationality', 'City', 'Sex']
+            
+            if field not in allowed_fields:
+                print(f"Field {field} is not allowed to update in USER table")
+                return False
+            
+            # 構建更新查詢
+            update_query = f"""
+                UPDATE "USER" 
+                SET "{field}" = %s
+                WHERE "User_id" = %s
+            """
+            self.execute_query(update_query, (value, user_id))
+            self.conn.commit()
+            return True
+            
+        except Exception as e:
+            print(f"Error updating user basic info: {str(e)}")
+            self.conn.rollback()
+            return False
+
     def update_user_detail(self, field, value, user_id):
         try:
             cursor = self.conn.cursor()

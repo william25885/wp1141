@@ -24,14 +24,27 @@ def update_user_profile():
         db = DatabaseManager()
         success = True
         
+        # 基本資料欄位（USER 表）
+        basic_fields = ['User_name', 'User_nickname', 'Phone', 'Birthday', 'Nationality', 'City', 'Sex']
+        
         for update in updates:
             field = update.get('field')
             value = update.get('value')
             print(f"Updating field {field} with value {value}")
-            if not db.update_user_detail(field, value, user_id):
-                print(f"Failed to update field {field}")
-                success = False
-                break
+            
+            # 判斷是基本資料還是詳細資料
+            if field in basic_fields:
+                # 更新基本資料（USER 表）
+                if not db.update_user_basic_info(field, value, user_id):
+                    print(f"Failed to update basic field {field}")
+                    success = False
+                    break
+            else:
+                # 更新詳細資料（USER_DETAIL 表）
+                if not db.update_user_detail(field, value, user_id):
+                    print(f"Failed to update detail field {field}")
+                    success = False
+                    break
 
         if success:
             print("Update successful")
