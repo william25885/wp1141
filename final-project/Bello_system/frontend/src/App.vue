@@ -19,19 +19,23 @@
 </template>
 
 <script>
-import { getUser, clearAuth } from '@/utils/api'
+import { getUser, clearAuth, apiPost } from '@/utils/api'
 
 export default {
   name: 'App',
   data() {
     return {
       isLoggedIn: false,
-      userRole: null
+      userRole: null,
+      onlineStatusInterval: null
     }
   },
   computed: {
     homeRoute() {
       return this.userRole === 'Admin' ? '/admin-lobby' : '/lobby'
+    },
+    isAuthPage() {
+      return ['/login', '/register'].includes(this.$route.path)
     }
   },
   created() {
@@ -43,12 +47,43 @@ export default {
       if (user) {
         this.isLoggedIn = true
         this.userRole = user.role
+        // 登入後開始追蹤在線狀態
+        this.startOnlineStatusTracking()
       } else {
         this.isLoggedIn = false
         this.userRole = null
+        this.stopOnlineStatusTracking()
+      }
+    },
+    async updateOnlineStatus(isOnline) {
+      try {
+        await apiPost('online-status', { is_online: isOnline })
+      } catch (error) {
+        // 靜默處理錯誤
+      }
+    },
+    startOnlineStatusTracking() {
+      // 立即設置為在線
+      this.updateOnlineStatus(true)
+      
+      // 每 30 秒更新一次在線狀態
+      if (this.onlineStatusInterval) {
+        clearInterval(this.onlineStatusInterval)
+      }
+      this.onlineStatusInterval = setInterval(() => {
+        this.updateOnlineStatus(true)
+      }, 30000)
+    },
+    stopOnlineStatusTracking() {
+      if (this.onlineStatusInterval) {
+        clearInterval(this.onlineStatusInterval)
+        this.onlineStatusInterval = null
       }
     },
     handleLogout() {
+      // 登出時設置為離線
+      this.updateOnlineStatus(false)
+      this.stopOnlineStatusTracking()
       clearAuth()
       this.isLoggedIn = false
       this.userRole = null
@@ -59,6 +94,11 @@ export default {
     $route() {
       this.checkLoginStatus()
     }
+  },
+  beforeUnmount() {
+    // 關閉頁面時設置為離線
+    this.updateOnlineStatus(false)
+    this.stopOnlineStatusTracking()
   }
 }
 </script>

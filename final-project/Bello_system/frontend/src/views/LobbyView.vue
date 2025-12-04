@@ -179,8 +179,7 @@ export default {
           path: null,
           action: () => this.openFriendsSidebar(),
           icon: 'bi bi-person-heart',
-          badge: this.pendingRequestsCount > 0 ? this.pendingRequestsCount : null,
-          cardClass: 'friend-card'
+          badge: this.pendingRequestsCount > 0 ? this.pendingRequestsCount : null
         },
         {
           title: '添加好友',
@@ -282,11 +281,6 @@ export default {
   transform: translateY(-4px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   border-color: #cbd5e0;
-}
-
-.lobby-card.friend-card {
-  background: linear-gradient(135deg, #f6f8ff 0%, #fff 100%);
-  border-color: #667eea;
 }
 
 .card-icon {
