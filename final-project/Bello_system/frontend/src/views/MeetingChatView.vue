@@ -36,11 +36,54 @@
     <div v-if="selectedMeeting" class="chat-modal">
       <div class="chat-window">
         <div class="chat-header">
-          <h4>{{ selectedMeeting.content }}</h4>
-          <button class="btn-close" @click="closeChat"></button>
+          <div class="header-left">
+            <h4>{{ selectedMeeting.content }}</h4>
+            <span class="participant-count text-muted ms-2">
+              ({{ participants.length }} 位成員)
+            </span>
+          </div>
+          <div class="header-right">
+            <button 
+              class="btn btn-outline-secondary btn-sm me-2"
+              @click="toggleParticipantList"
+            >
+              <span v-if="!showParticipants">👥 查看成員</span>
+              <span v-else>💬 返回聊天</span>
+            </button>
+            <button class="btn-close" @click="closeChat"></button>
+          </div>
         </div>
         
-        <div class="chat-messages" ref="messageContainer">
+        <!-- 成員列表 -->
+        <div v-if="showParticipants" class="participant-list">
+          <h5 class="mb-3">聚會成員</h5>
+          <div 
+            v-for="participant in participants" 
+            :key="participant.user_id"
+            class="participant-item"
+            :class="{ 'is-me': participant.user_id === currentUserId }"
+            @click="participant.user_id !== currentUserId && showUserProfile({ 
+              sender_id: participant.user_id, 
+              sender_name: participant.user_name,
+              sender_nickname: participant.user_nickname
+            })"
+          >
+            <div class="participant-avatar">
+              <img v-if="participant.avatar_url" :src="participant.avatar_url" alt="頭像">
+              <span v-else>{{ participant.user_nickname?.charAt(0) || participant.user_name?.charAt(0) }}</span>
+            </div>
+            <div class="participant-info">
+              <div class="participant-name">
+                {{ participant.user_name }}
+                <span v-if="participant.is_host" class="badge bg-primary ms-1">主辦人</span>
+                <span v-if="participant.user_id === currentUserId" class="badge bg-secondary ms-1">我</span>
+              </div>
+              <div class="participant-nickname text-muted">{{ participant.user_nickname }}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div v-else class="chat-messages" ref="messageContainer">
           <div v-for="message in messages" :key="message.id" 
                class="message" 
                :class="{ 'message-mine': message.sender_id === currentUserId }">
@@ -60,7 +103,7 @@
           </div>
         </div>
         
-        <div class="chat-input">
+        <div v-if="!showParticipants" class="chat-input">
           <div class="input-group">
             <input
               type="text"
@@ -105,6 +148,9 @@ export default {
       messages: [],
       currentUserId: null,
       pollingInterval: null,
+      // 成員列表
+      participants: [],
+      showParticipants: false,
       // 用戶資訊彈窗
       showProfilePopup: false,
       selectedUser: {
@@ -139,7 +185,9 @@ export default {
     
     openChat(meeting) {
       this.selectedMeeting = meeting
+      this.showParticipants = false
       this.loadChatHistory()
+      this.loadParticipants()
       this.startPolling()
     },
     
@@ -147,8 +195,27 @@ export default {
       this.selectedMeeting = null
       this.messages = []
       this.messageText = ''
+      this.participants = []
+      this.showParticipants = false
       if (this.pollingInterval) {
         clearInterval(this.pollingInterval)
+      }
+    },
+    
+    toggleParticipantList() {
+      this.showParticipants = !this.showParticipants
+    },
+    
+    async loadParticipants() {
+      if (!this.selectedMeeting) return
+      
+      try {
+        const data = await apiGet(`meeting/${this.selectedMeeting.meeting_id}/participants`)
+        if (data.status === 'success') {
+          this.participants = data.participants
+        }
+      } catch (error) {
+        console.error('Error loading participants:', error)
       }
     },
     
@@ -315,6 +382,81 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.participant-count {
+  font-size: 0.875rem;
+}
+
+/* 成員列表樣式 */
+.participant-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  background: #fff;
+}
+
+.participant-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.participant-item:hover:not(.is-me) {
+  background-color: #f8f9fa;
+}
+
+.participant-item.is-me {
+  cursor: default;
+  background-color: #e3f2fd;
+}
+
+.participant-avatar {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 18px;
+  margin-right: 1rem;
+  overflow: hidden;
+}
+
+.participant-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.participant-info {
+  flex: 1;
+}
+
+.participant-name {
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.participant-nickname {
+  font-size: 0.875rem;
 }
 
 .chat-messages {

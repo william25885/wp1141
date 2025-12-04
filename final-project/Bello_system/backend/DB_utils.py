@@ -1024,6 +1024,87 @@ class DatabaseManager:
             }
         return {}
 
+    def get_meeting_participants(self, meeting_id):
+        """獲取聚會的所有參與者"""
+        try:
+            query = """
+                SELECT 
+                    u."User_id", 
+                    u."User_name", 
+                    u."User_nickname",
+                    u."Avatar_url",
+                    CASE WHEN m."Holder_id" = u."User_id" THEN true ELSE false END as is_host
+                FROM "USER" u
+                JOIN "PARTICIPATION" p ON u."User_id" = p."User_id"
+                JOIN "MEETING" m ON p."Meeting_id" = m."Meeting_id"
+                WHERE p."Meeting_id" = %s
+                ORDER BY is_host DESC, p."Join_time" ASC
+            """
+            result = self.execute_query(query, (meeting_id,))
+            
+            participants = []
+            for row in result:
+                participants.append({
+                    'user_id': row[0],
+                    'user_name': row[1],
+                    'user_nickname': row[2],
+                    'avatar_url': row[3],
+                    'is_host': row[4]
+                })
+            return participants
+        except Exception as e:
+            print(f"Error getting meeting participants: {e}")
+            return []
+
+    def get_user_public_profile(self, user_id):
+        """獲取用戶的公開個人資料（供其他用戶查看）"""
+        try:
+            # 獲取基本資料
+            basic_query = """
+                SELECT "User_name", "User_nickname", "Sex", "Nationality", "City", "Avatar_url"
+                FROM "USER"
+                WHERE "User_id" = %s
+            """
+            basic_result = self.execute_query(basic_query, (user_id,))
+            
+            if not basic_result:
+                return None
+            
+            row = basic_result[0]
+            profile = {
+                'user_name': row[0] or '',
+                'user_nickname': row[1] or '',
+                'sex': row[2] or '',
+                'nationality': row[3] or '',
+                'city': row[4] or '',
+                'avatar_url': row[5] or ''
+            }
+            
+            # 獲取詳細資料
+            detail_query = """
+                SELECT "Star_sign", "Mbti", "Blood_type", "University", 
+                       "Self_introduction", "Interest"
+                FROM "USER_DETAIL"
+                WHERE "User_id" = %s
+            """
+            detail_result = self.execute_query(detail_query, (user_id,))
+            
+            if detail_result:
+                detail_row = detail_result[0]
+                profile.update({
+                    'star_sign': detail_row[0] or '',
+                    'mbti': detail_row[1] or '',
+                    'blood_type': detail_row[2] or '',
+                    'university': detail_row[3] or '',
+                    'self_introduction': detail_row[4] or '',
+                    'interest': detail_row[5] or ''
+                })
+            
+            return profile
+        except Exception as e:
+            print(f"Error getting user public profile: {e}")
+            return None
+
     def remove_user_from_meeting(self, meeting_id, user_id):
         try:
             self._ensure_connection()

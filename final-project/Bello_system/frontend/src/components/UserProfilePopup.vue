@@ -1,32 +1,92 @@
 <template>
   <div class="modal fade" :class="{ 'show d-block': show }" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title">用戶資訊</h5>
           <button type="button" class="btn-close" @click="$emit('close')"></button>
         </div>
-        <div class="modal-body text-center">
-          <div v-if="loading" class="py-4">
+        <div class="modal-body">
+          <div v-if="loading" class="text-center py-4">
             <div class="spinner-border" role="status">
               <span class="visually-hidden">載入中...</span>
             </div>
           </div>
           <div v-else>
-            <div class="user-avatar mx-auto mb-3">
-              <div class="avatar-circle large">
-                {{ userNickname?.charAt(0) || userName?.charAt(0) }}
+            <!-- 基本資訊區塊 -->
+            <div class="text-center mb-4">
+              <div class="user-avatar mx-auto mb-3">
+                <div class="avatar-circle large" v-if="!userProfile.avatar_url">
+                  {{ userNickname?.charAt(0) || userName?.charAt(0) }}
+                </div>
+                <img 
+                  v-else 
+                  :src="userProfile.avatar_url" 
+                  alt="頭像" 
+                  class="avatar-img"
+                >
+                <span 
+                  v-if="onlineStatus !== null"
+                  class="online-indicator" 
+                  :class="{ 'online': onlineStatus }"
+                ></span>
               </div>
-              <span 
-                v-if="onlineStatus !== null"
-                class="online-indicator" 
-                :class="{ 'online': onlineStatus }"
-              ></span>
+              <h5 class="user-name mb-1">{{ userProfile.user_name || userName }}</h5>
+              <p class="user-nickname text-muted mb-0">{{ userProfile.user_nickname || userNickname }}</p>
             </div>
-            <h5 class="user-name mb-1">{{ userName }}</h5>
-            <p class="user-nickname text-muted mb-3">{{ userNickname }}</p>
             
-            <div class="action-buttons">
+            <!-- 詳細資料區塊 -->
+            <div v-if="hasDetailInfo" class="profile-details">
+              <h6 class="details-title mb-3">個人資料</h6>
+              
+              <div class="details-grid">
+                <div v-if="userProfile.sex" class="detail-item">
+                  <span class="detail-label">性別</span>
+                  <span class="detail-value">{{ userProfile.sex }}</span>
+                </div>
+                <div v-if="userProfile.nationality" class="detail-item">
+                  <span class="detail-label">國籍</span>
+                  <span class="detail-value">{{ userProfile.nationality }}</span>
+                </div>
+                <div v-if="userProfile.city" class="detail-item">
+                  <span class="detail-label">城市</span>
+                  <span class="detail-value">{{ userProfile.city }}</span>
+                </div>
+                <div v-if="userProfile.star_sign" class="detail-item">
+                  <span class="detail-label">星座</span>
+                  <span class="detail-value">{{ userProfile.star_sign }}</span>
+                </div>
+                <div v-if="userProfile.mbti" class="detail-item">
+                  <span class="detail-label">MBTI</span>
+                  <span class="detail-value">{{ userProfile.mbti }}</span>
+                </div>
+                <div v-if="userProfile.blood_type" class="detail-item">
+                  <span class="detail-label">血型</span>
+                  <span class="detail-value">{{ userProfile.blood_type }}</span>
+                </div>
+                <div v-if="userProfile.university" class="detail-item full-width">
+                  <span class="detail-label">學校</span>
+                  <span class="detail-value">{{ userProfile.university }}</span>
+                </div>
+              </div>
+              
+              <div v-if="userProfile.interest" class="detail-section">
+                <span class="detail-label">興趣</span>
+                <p class="detail-text">{{ userProfile.interest }}</p>
+              </div>
+              
+              <div v-if="userProfile.self_introduction" class="detail-section">
+                <span class="detail-label">自我介紹</span>
+                <p class="detail-text">{{ userProfile.self_introduction }}</p>
+              </div>
+            </div>
+            
+            <div v-else class="text-center text-muted py-3">
+              <small>此用戶尚未填寫詳細資料</small>
+            </div>
+            
+            <!-- 操作按鈕 -->
+            <div class="action-buttons mt-4">
               <!-- 好友操作按鈕 -->
               <button 
                 v-if="friendshipStatus === 'none'"
@@ -105,7 +165,21 @@ export default {
       loading: false,
       actionLoading: false,
       friendshipStatus: 'none',
-      onlineStatus: null
+      onlineStatus: null,
+      userProfile: {}
+    }
+  },
+  computed: {
+    hasDetailInfo() {
+      return this.userProfile.sex || 
+             this.userProfile.nationality || 
+             this.userProfile.city ||
+             this.userProfile.star_sign || 
+             this.userProfile.mbti || 
+             this.userProfile.blood_type ||
+             this.userProfile.university ||
+             this.userProfile.interest ||
+             this.userProfile.self_introduction
     }
   },
   watch: {
@@ -118,7 +192,15 @@ export default {
   methods: {
     async loadUserInfo() {
       this.loading = true
+      this.userProfile = {}
+      
       try {
+        // 獲取用戶公開資料
+        const profileData = await apiGet(`user-profile/${this.userId}`)
+        if (profileData.status === 'success') {
+          this.userProfile = profileData.profile || {}
+        }
+        
         // 獲取好友狀態
         const statusData = await apiGet(`friends/status/${this.userId}`)
         if (statusData.status === 'success') {
@@ -178,8 +260,8 @@ export default {
     startChat() {
       this.$emit('start-chat', {
         user_id: this.userId,
-        user_name: this.userName,
-        user_nickname: this.userNickname
+        user_name: this.userProfile.user_name || this.userName,
+        user_nickname: this.userProfile.user_nickname || this.userNickname
       })
       this.$emit('close')
     }
@@ -190,6 +272,10 @@ export default {
 <style scoped>
 .modal {
   background: rgba(0,0,0,0.5);
+}
+
+.modal-dialog {
+  max-width: 450px;
 }
 
 .user-avatar {
@@ -213,6 +299,13 @@ export default {
   font-size: 32px;
 }
 
+.avatar-img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .online-indicator {
   position: absolute;
   bottom: 5px;
@@ -232,12 +325,67 @@ export default {
   font-weight: 600;
 }
 
+/* 詳細資料樣式 */
+.profile-details {
+  background: #f8f9fa;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.details-title {
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 0.5rem;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-item.full-width {
+  grid-column: span 2;
+}
+
+.detail-label {
+  font-size: 0.75rem;
+  color: #6c757d;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+
+.detail-value {
+  font-weight: 500;
+  color: #2d3748;
+}
+
+.detail-section {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #dee2e6;
+}
+
+.detail-text {
+  margin-top: 0.25rem;
+  margin-bottom: 0;
+  color: #4a5568;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
 .action-buttons {
-  margin-top: 20px;
+  padding-top: 1rem;
+  border-top: 1px solid #dee2e6;
 }
 
 .badge {
   font-size: 14px;
 }
 </style>
-

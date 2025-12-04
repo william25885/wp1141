@@ -299,3 +299,29 @@ def get_user_status(target_user_id):
             'message': str(e)
         }), 500
 
+@friendship.route('/user-profile/<int:target_user_id>', methods=['GET'])
+@require_auth
+def get_user_public_profile(target_user_id):
+    """獲取指定用戶的公開個人資料"""
+    try:
+        db = DatabaseManager()
+        profile = db.get_user_public_profile(target_user_id)
+        
+        if profile:
+            return jsonify({
+                'status': 'success',
+                'profile': profile
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': '找不到該用戶'
+            }), 404
+        
+    except Exception as e:
+        print(f"Error getting user profile: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+

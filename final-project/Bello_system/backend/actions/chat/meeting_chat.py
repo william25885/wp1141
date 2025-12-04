@@ -4,6 +4,26 @@ from jwt_utils import require_auth
 
 meeting_chat = Blueprint("meeting_chat", __name__)
 
+@meeting_chat.route('/meeting/<meeting_id>/participants', methods=['GET'])
+@require_auth
+def get_meeting_participants(meeting_id):
+    """獲取聚會的所有參與者"""
+    try:
+        db = DatabaseManager()
+        participants = db.get_meeting_participants(meeting_id)
+        
+        return jsonify({
+            'status': 'success',
+            'participants': participants
+        })
+        
+    except Exception as e:
+        print(f"Error getting meeting participants: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 @meeting_chat.route('/meeting-chat/<meeting_id>', methods=['GET', 'OPTIONS'])
 @require_auth
 def get_meeting_chat(meeting_id):
