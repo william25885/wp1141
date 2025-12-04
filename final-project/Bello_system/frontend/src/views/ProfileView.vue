@@ -16,7 +16,6 @@
             <p><strong>電子郵件:</strong> {{ userData.email || '未設定' }}</p>
             <p><strong>電話:</strong> {{ userData.phone || '未設定' }}</p>
             <p><strong>生日:</strong> {{ formatDate(userData.birthday) || '未設定' }}</p>
-            <p v-if="userData.avatar_url"><strong>頭像:</strong> <img :src="userData.avatar_url" alt="頭像" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;"></p>
           </div>
         </div>
       </div>
