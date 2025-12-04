@@ -30,7 +30,7 @@
         <p class="mb-2 small">Google 登入在內嵌瀏覽器（如 LINE、Facebook）中無法使用。請使用以下方式：</p>
         <button 
           class="btn btn-sm btn-primary" 
-          @click="openInExternalBrowser"
+          @click="showUrlModal = true"
         >
           在外部瀏覽器開啟
         </button>
@@ -41,6 +41,42 @@
         >
           我仍要嘗試
         </button>
+      </div>
+      
+      <!-- URL 複製彈窗 -->
+      <div v-if="showUrlModal" class="url-modal-overlay" @click.self="showUrlModal = false">
+        <div class="url-modal">
+          <div class="url-modal-header">
+            <h5>{{ getDomain() }}</h5>
+            <button class="btn-close-modal" @click="showUrlModal = false">✕</button>
+          </div>
+          <div class="url-modal-body">
+            <p class="mb-3">請複製以下網址，並在外部瀏覽器（如 Chrome、Safari）中開啟：</p>
+            <div class="url-input-group">
+              <input 
+                type="text" 
+                :value="getExternalUrl()" 
+                readonly 
+                class="form-control url-input"
+                ref="urlInput"
+                id="external-url-input"
+              >
+              <button 
+                class="btn btn-primary btn-copy" 
+                @click="copyToClipboard"
+                :class="{ 'btn-success': urlCopied }"
+              >
+                {{ urlCopied ? '✓ 已複製' : '複製' }}
+              </button>
+            </div>
+            <p class="mt-3 small text-muted">
+              或者點擊右上角的選單，選擇「在瀏覽器中開啟」
+            </p>
+          </div>
+          <div class="url-modal-footer">
+            <button class="btn btn-primary" @click="showUrlModal = false">確定</button>
+          </div>
+        </div>
       </div>
       
       <!-- 正常 Google 登入按鈕 -->
@@ -74,7 +110,9 @@ export default {
       googleLoading: true,
       googleError: null,
       isLineBrowser: false,
-      showLineWarning: false
+      showLineWarning: false,
+      showUrlModal: false,
+      urlCopied: false
     }
   },
   mounted() {
@@ -141,21 +179,47 @@ export default {
       }
     },
     
-    openInExternalBrowser() {
-      // 獲取當前 URL
-      const currentUrl = window.location.href
-      
-      // 嘗試使用不同的方式打開外部瀏覽器
-      // 方法1: 使用 window.open (某些瀏覽器可能不支援)
-      const newWindow = window.open(currentUrl, '_blank')
-      
-      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-        // 方法2: 顯示提示讓用戶手動複製連結
-        alert(
-          '請複製以下網址，並在外部瀏覽器（如 Chrome、Safari）中開啟：\n\n' + 
-          currentUrl + 
-          '\n\n或者點擊右上角的選單，選擇「在瀏覽器中開啟」'
-        )
+    getExternalUrl() {
+      // 獲取完整的登入頁面 URL
+      // 確保使用正確的協議和域名
+      const origin = window.location.origin
+      const path = '/login'
+      return `${origin}${path}`
+    },
+    
+    getDomain() {
+      // 獲取域名（不包含協議）
+      return window.location.hostname
+    },
+    
+    async copyToClipboard() {
+      try {
+        const urlInput = this.$refs.urlInput
+        if (urlInput) {
+          urlInput.select()
+          urlInput.setSelectionRange(0, 99999) // 對於移動設備
+          
+          // 使用 Clipboard API
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(this.getExternalUrl())
+          } else {
+            // 降級方案：使用 document.execCommand
+            document.execCommand('copy')
+          }
+          
+          this.urlCopied = true
+          setTimeout(() => {
+            this.urlCopied = false
+          }, 2000)
+        }
+      } catch (error) {
+        console.error('Failed to copy:', error)
+        // 如果複製失敗，至少選中文字讓用戶可以手動複製
+        const urlInput = this.$refs.urlInput
+        if (urlInput) {
+          urlInput.select()
+        }
+        alert('無法自動複製，請手動選中並複製網址')
       }
     },
     
@@ -326,5 +390,93 @@ export default {
 .line-browser-warning .small {
   font-size: 0.875rem;
   color: #856404;
+}
+
+/* URL 複製彈窗樣式 */
+.url-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.url-modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.url-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8f9fa;
+}
+
+.url-modal-header h5 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.url-modal-header .btn-close-modal {
+  background: none;
+  border: none;
+  color: #718096;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.url-modal-header .btn-close-modal:hover {
+  color: #2d3748;
+}
+
+.url-modal-body {
+  padding: 20px;
+}
+
+.url-input-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.url-input {
+  flex: 1;
+  font-size: 0.9rem;
+  padding: 8px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+}
+
+.btn-copy {
+  white-space: nowrap;
+  min-width: 80px;
+}
+
+.url-modal-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8f9fa;
+  text-align: right;
 }
 </style>
