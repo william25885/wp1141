@@ -96,3 +96,20 @@ CREATE TABLE PRIVATE_MESSAGE (
     Content VARCHAR(200),
     PRIMARY KEY (Sender_id, Receiver_id, Sending_time)
 );
+
+-- Create FRIENDSHIP table for friend relationships
+CREATE TABLE FRIENDSHIP (
+    User_id BIGINT REFERENCES "USER"(User_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    Friend_id BIGINT REFERENCES "USER"(User_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    Status VARCHAR(20) NOT NULL CHECK (Status IN ('pending', 'accepted', 'rejected')),
+    Created_at TIMESTAMP DEFAULT NOW(),
+    Updated_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (User_id, Friend_id)
+);
+
+-- Create USER_ONLINE_STATUS table for tracking online status
+CREATE TABLE USER_ONLINE_STATUS (
+    User_id BIGINT PRIMARY KEY REFERENCES "USER"(User_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    Is_online BOOLEAN DEFAULT FALSE,
+    Last_active TIMESTAMP DEFAULT NOW()
+);

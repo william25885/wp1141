@@ -1280,3 +1280,336 @@ class DatabaseManager:
         except Exception as e:
             print(f"Error in search_chat_users: {str(e)}")
             return []
+
+    # ==================== 好友功能 ====================
+
+    def send_friend_request(self, user_id, friend_id):
+        """發送好友請求"""
+        try:
+            self._ensure_connection()
+            # 檢查是否已經存在好友關係
+            check_query = """
+                SELECT "Status" FROM "FRIENDSHIP"
+                WHERE ("User_id" = %s AND "Friend_id" = %s)
+                OR ("User_id" = %s AND "Friend_id" = %s)
+            """
+            result = self.execute_query(check_query, (user_id, friend_id, friend_id, user_id))
+            
+            if result:
+                status = result[0][0]
+                if status == 'accepted':
+                    return {'success': False, 'message': '你們已經是好友了'}
+                elif status == 'pending':
+                    return {'success': False, 'message': '已有待處理的好友請求'}
+            
+            # 發送好友請求
+            insert_query = """
+                INSERT INTO "FRIENDSHIP" ("User_id", "Friend_id", "Status", "Created_at", "Updated_at")
+                VALUES (%s, %s, 'pending', NOW(), NOW())
+                ON CONFLICT ("User_id", "Friend_id") 
+                DO UPDATE SET "Status" = 'pending', "Updated_at" = NOW()
+            """
+            self.execute_query(insert_query, (user_id, friend_id))
+            self.conn.commit()
+            return {'success': True, 'message': '好友請求已發送'}
+            
+        except Exception as e:
+            print(f"Error sending friend request: {str(e)}")
+            self.conn.rollback()
+            return {'success': False, 'message': str(e)}
+
+    def accept_friend_request(self, user_id, friend_id):
+        """接受好友請求"""
+        try:
+            self._ensure_connection()
+            # 更新原來的請求狀態
+            update_query = """
+                UPDATE "FRIENDSHIP"
+                SET "Status" = 'accepted', "Updated_at" = NOW()
+                WHERE "User_id" = %s AND "Friend_id" = %s AND "Status" = 'pending'
+            """
+            self.execute_query(update_query, (friend_id, user_id))
+            
+            # 建立雙向好友關係
+            insert_query = """
+                INSERT INTO "FRIENDSHIP" ("User_id", "Friend_id", "Status", "Created_at", "Updated_at")
+                VALUES (%s, %s, 'accepted', NOW(), NOW())
+                ON CONFLICT ("User_id", "Friend_id") 
+                DO UPDATE SET "Status" = 'accepted', "Updated_at" = NOW()
+            """
+            self.execute_query(insert_query, (user_id, friend_id))
+            self.conn.commit()
+            return True
+            
+        except Exception as e:
+            print(f"Error accepting friend request: {str(e)}")
+            self.conn.rollback()
+            return False
+
+    def reject_friend_request(self, user_id, friend_id):
+        """拒絕好友請求"""
+        try:
+            self._ensure_connection()
+            update_query = """
+                UPDATE "FRIENDSHIP"
+                SET "Status" = 'rejected', "Updated_at" = NOW()
+                WHERE "User_id" = %s AND "Friend_id" = %s AND "Status" = 'pending'
+            """
+            self.execute_query(update_query, (friend_id, user_id))
+            self.conn.commit()
+            return True
+            
+        except Exception as e:
+            print(f"Error rejecting friend request: {str(e)}")
+            self.conn.rollback()
+            return False
+
+    def remove_friend(self, user_id, friend_id):
+        """刪除好友"""
+        try:
+            self._ensure_connection()
+            # 刪除雙向好友關係
+            delete_query = """
+                DELETE FROM "FRIENDSHIP"
+                WHERE ("User_id" = %s AND "Friend_id" = %s)
+                OR ("User_id" = %s AND "Friend_id" = %s)
+            """
+            self.execute_query(delete_query, (user_id, friend_id, friend_id, user_id))
+            self.conn.commit()
+            return True
+            
+        except Exception as e:
+            print(f"Error removing friend: {str(e)}")
+            self.conn.rollback()
+            return False
+
+    def get_friends_list(self, user_id):
+        """獲取好友列表（包含在線狀態）"""
+        try:
+            query = """
+                SELECT 
+                    u."User_id",
+                    u."User_name",
+                    u."User_nickname",
+                    COALESCE(os."Is_online", FALSE) as is_online,
+                    os."Last_active"
+                FROM "USER" u
+                INNER JOIN "FRIENDSHIP" f ON (
+                    (f."Friend_id" = u."User_id" AND f."User_id" = %s)
+                    OR (f."User_id" = u."User_id" AND f."Friend_id" = %s)
+                )
+                LEFT JOIN "USER_ONLINE_STATUS" os ON u."User_id" = os."User_id"
+                WHERE f."Status" = 'accepted'
+                AND u."User_id" != %s
+                ORDER BY os."Is_online" DESC, u."User_name" ASC
+            """
+            result = self.execute_query(query, (user_id, user_id, user_id))
+            
+            if not result:
+                return []
+            
+            friends = []
+            for row in result:
+                friends.append({
+                    'user_id': row[0],
+                    'user_name': row[1],
+                    'user_nickname': row[2],
+                    'is_online': row[3],
+                    'last_active': row[4].strftime('%Y-%m-%d %H:%M:%S') if row[4] else None
+                })
+            return friends
+            
+        except Exception as e:
+            print(f"Error getting friends list: {str(e)}")
+            return []
+
+    def get_pending_friend_requests(self, user_id):
+        """獲取待處理的好友請求"""
+        try:
+            query = """
+                SELECT 
+                    u."User_id",
+                    u."User_name",
+                    u."User_nickname",
+                    f."Created_at"
+                FROM "USER" u
+                INNER JOIN "FRIENDSHIP" f ON f."User_id" = u."User_id"
+                WHERE f."Friend_id" = %s AND f."Status" = 'pending'
+                ORDER BY f."Created_at" DESC
+            """
+            result = self.execute_query(query, (user_id,))
+            
+            if not result:
+                return []
+            
+            requests = []
+            for row in result:
+                requests.append({
+                    'user_id': row[0],
+                    'user_name': row[1],
+                    'user_nickname': row[2],
+                    'created_at': row[3].strftime('%Y-%m-%d %H:%M:%S') if row[3] else None
+                })
+            return requests
+            
+        except Exception as e:
+            print(f"Error getting pending friend requests: {str(e)}")
+            return []
+
+    def get_sent_friend_requests(self, user_id):
+        """獲取已發送的好友請求"""
+        try:
+            query = """
+                SELECT 
+                    u."User_id",
+                    u."User_name",
+                    u."User_nickname",
+                    f."Created_at"
+                FROM "USER" u
+                INNER JOIN "FRIENDSHIP" f ON f."Friend_id" = u."User_id"
+                WHERE f."User_id" = %s AND f."Status" = 'pending'
+                ORDER BY f."Created_at" DESC
+            """
+            result = self.execute_query(query, (user_id,))
+            
+            if not result:
+                return []
+            
+            requests = []
+            for row in result:
+                requests.append({
+                    'user_id': row[0],
+                    'user_name': row[1],
+                    'user_nickname': row[2],
+                    'created_at': row[3].strftime('%Y-%m-%d %H:%M:%S') if row[3] else None
+                })
+            return requests
+            
+        except Exception as e:
+            print(f"Error getting sent friend requests: {str(e)}")
+            return []
+
+    def check_friendship_status(self, user_id, other_user_id):
+        """檢查兩個用戶之間的好友狀態"""
+        try:
+            query = """
+                SELECT "Status", "User_id"
+                FROM "FRIENDSHIP"
+                WHERE ("User_id" = %s AND "Friend_id" = %s)
+                OR ("User_id" = %s AND "Friend_id" = %s)
+                LIMIT 1
+            """
+            result = self.execute_query(query, (user_id, other_user_id, other_user_id, user_id))
+            
+            if not result:
+                return {'status': 'none', 'is_friend': False}
+            
+            status = result[0][0]
+            requester_id = result[0][1]
+            
+            if status == 'accepted':
+                return {'status': 'accepted', 'is_friend': True}
+            elif status == 'pending':
+                if requester_id == user_id:
+                    return {'status': 'pending_sent', 'is_friend': False}
+                else:
+                    return {'status': 'pending_received', 'is_friend': False}
+            else:
+                return {'status': 'none', 'is_friend': False}
+            
+        except Exception as e:
+            print(f"Error checking friendship status: {str(e)}")
+            return {'status': 'error', 'is_friend': False}
+
+    def search_users_for_friend(self, query, current_user_id, limit=20):
+        """搜尋用戶以添加好友"""
+        try:
+            sql = """
+                SELECT 
+                    u."User_id", 
+                    u."User_name", 
+                    u."User_nickname",
+                    CASE 
+                        WHEN f."Status" = 'accepted' THEN 'friend'
+                        WHEN f."Status" = 'pending' AND f."User_id" = %s THEN 'pending_sent'
+                        WHEN f."Status" = 'pending' AND f."Friend_id" = %s THEN 'pending_received'
+                        ELSE 'none'
+                    END as friendship_status
+                FROM "USER" u
+                LEFT JOIN "USER_ROLE" ur ON u."User_id" = ur."User_id" AND ur."Role" = 'Admin'
+                LEFT JOIN "FRIENDSHIP" f ON (
+                    (f."User_id" = %s AND f."Friend_id" = u."User_id")
+                    OR (f."Friend_id" = %s AND f."User_id" = u."User_id")
+                )
+                WHERE ("User_id"::text LIKE %s 
+                      OR "User_nickname" ILIKE %s 
+                      OR "User_name" ILIKE %s)
+                AND u."User_id" != %s
+                AND ur."User_id" IS NULL
+                LIMIT %s
+            """
+            search_pattern = f"%{query}%"
+            params = (
+                current_user_id, current_user_id,
+                current_user_id, current_user_id,
+                search_pattern, search_pattern, search_pattern,
+                current_user_id, limit
+            )
+            
+            result = self.execute_query(sql, params)
+            
+            return [
+                {
+                    'user_id': row[0], 
+                    'user_name': row[1], 
+                    'user_nickname': row[2],
+                    'friendship_status': row[3] if row[3] else 'none'
+                }
+                for row in result
+            ]
+            
+        except Exception as e:
+            print(f"Error in search_users_for_friend: {str(e)}")
+            return []
+
+    # ==================== 在線狀態功能 ====================
+
+    def update_online_status(self, user_id, is_online):
+        """更新用戶在線狀態"""
+        try:
+            self._ensure_connection()
+            query = """
+                INSERT INTO "USER_ONLINE_STATUS" ("User_id", "Is_online", "Last_active")
+                VALUES (%s, %s, NOW())
+                ON CONFLICT ("User_id") 
+                DO UPDATE SET "Is_online" = %s, "Last_active" = NOW()
+            """
+            self.execute_query(query, (user_id, is_online, is_online))
+            self.conn.commit()
+            return True
+            
+        except Exception as e:
+            print(f"Error updating online status: {str(e)}")
+            self.conn.rollback()
+            return False
+
+    def get_user_online_status(self, user_id):
+        """獲取用戶在線狀態"""
+        try:
+            query = """
+                SELECT "Is_online", "Last_active"
+                FROM "USER_ONLINE_STATUS"
+                WHERE "User_id" = %s
+            """
+            result = self.execute_query(query, (user_id,))
+            
+            if result:
+                return {
+                    'is_online': result[0][0],
+                    'last_active': result[0][1].strftime('%Y-%m-%d %H:%M:%S') if result[0][1] else None
+                }
+            return {'is_online': False, 'last_active': None}
+            
+        except Exception as e:
+            print(f"Error getting user online status: {str(e)}")
+            return {'is_online': False, 'last_active': None}

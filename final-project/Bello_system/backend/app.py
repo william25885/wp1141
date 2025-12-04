@@ -25,6 +25,7 @@ from actions.admin.meeting_chat import admin_meeting_chat
 from actions.chat.meeting_chat import meeting_chat
 from actions.chat.private_chat import private_chat
 from actions.chat.search_user import chat_search
+from actions.friend.friendship import friendship
 
 app = Flask(__name__)
 #CORS(app, resources={r"*": {"origins": "*"}}) 
@@ -79,6 +80,7 @@ app.register_blueprint(admin_meeting_chat, url_prefix='/api')
 app.register_blueprint(meeting_chat, url_prefix='/api')
 app.register_blueprint(private_chat, url_prefix='/api')
 app.register_blueprint(chat_search, url_prefix='/api')
+app.register_blueprint(friendship, url_prefix='/api')
 
 if __name__ == '__main__':
     app.run(debug=True, port=8800)

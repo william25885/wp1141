@@ -46,7 +46,13 @@
                :class="{ 'message-mine': message.sender_id === currentUserId }">
             <div class="message-content">
               <div class="message-header">
-                <span class="sender">{{ message.sender_name }}</span>
+                <span 
+                  class="sender" 
+                  :class="{ 'clickable': message.sender_id !== currentUserId }"
+                  @click="message.sender_id !== currentUserId && showUserProfile(message)"
+                >
+                  {{ message.sender_name }}
+                </span>
                 <span class="time">{{ formatTime(message.timestamp) }}</span>
               </div>
               <div class="message-text">{{ message.content }}</div>
@@ -68,14 +74,29 @@
         </div>
       </div>
     </div>
+
+    <!-- 用戶資訊彈窗 -->
+    <UserProfilePopup
+      :show="showProfilePopup"
+      :userId="selectedUser.user_id"
+      :userName="selectedUser.user_name"
+      :userNickname="selectedUser.user_nickname"
+      @close="showProfilePopup = false"
+      @start-chat="goToPrivateChat"
+      @friend-updated="onFriendUpdated"
+    />
   </div>
 </template>
 
 <script>
 import { getUser, apiGet, apiPost } from '@/utils/api'
+import UserProfilePopup from '@/components/UserProfilePopup.vue'
 
 export default {
   name: 'MeetingChatView',
+  components: {
+    UserProfilePopup
+  },
   data() {
     return {
       myMeetings: [],
@@ -83,7 +104,14 @@ export default {
       messageText: '',
       messages: [],
       currentUserId: null,
-      pollingInterval: null
+      pollingInterval: null,
+      // 用戶資訊彈窗
+      showProfilePopup: false,
+      selectedUser: {
+        user_id: null,
+        user_name: '',
+        user_nickname: ''
+      }
     }
   },
   methods: {
@@ -96,7 +124,6 @@ export default {
       this.currentUserId = user.user_id
       
       try {
-        // 使用 apiGet，後端會從 token 獲取 user_id
         const data = await apiGet(`my-meetings/${user.user_id}`)
         console.log(data)
         if (data.status === 'success') {
@@ -129,7 +156,6 @@ export default {
       if (!this.selectedMeeting) return
       
       try {
-        // 使用 apiGet，自動添加 token
         const data = await apiGet(`meeting-chat/${this.selectedMeeting.meeting_id}`)
         if (data.status === 'success') {
           this.messages = data.messages
@@ -148,14 +174,13 @@ export default {
     startPolling() {
       this.pollingInterval = setInterval(() => {
         this.loadChatHistory()
-      }, 1000) // 每1秒更新一次
+      }, 1000)
     },
     
     async sendMessage() {
       if (!this.messageText.trim()) return
       
       try {
-        // 使用 apiPost，後端會從 token 獲取 sender_id
         const data = await apiPost('meeting-chat/send', {
           meeting_id: this.selectedMeeting.meeting_id,
           content: this.messageText
@@ -173,6 +198,33 @@ export default {
       }
     },
     
+    showUserProfile(message) {
+      this.selectedUser = {
+        user_id: message.sender_id,
+        user_name: message.sender_name,
+        user_nickname: message.sender_name
+      }
+      this.showProfilePopup = true
+    },
+    
+    goToPrivateChat(user) {
+      // 關閉聊天室
+      this.closeChat()
+      // 導向私人聊天頁面
+      this.$router.push({
+        path: '/chat',
+        query: {
+          userId: user.user_id,
+          userName: user.user_name || user.user_nickname
+        }
+      })
+    },
+    
+    onFriendUpdated() {
+      // 好友狀態更新後的回調
+      console.log('Friend status updated')
+    },
+    
     scrollToBottom() {
       const container = this.$refs.messageContainer
       if (container) {
@@ -187,7 +239,7 @@ export default {
   created() {
     this.fetchMyMeetings()
   },
-  beforeDestroy() {
+  beforeUnmount() {
     if (this.pollingInterval) {
       clearInterval(this.pollingInterval)
     }
@@ -300,6 +352,21 @@ export default {
 
 .sender {
   font-weight: 600;
+}
+
+.sender.clickable {
+  cursor: pointer;
+  color: #667eea;
+  transition: color 0.2s;
+}
+
+.sender.clickable:hover {
+  color: #764ba2;
+  text-decoration: underline;
+}
+
+.message-mine .sender {
+  color: white;
 }
 
 .time {
