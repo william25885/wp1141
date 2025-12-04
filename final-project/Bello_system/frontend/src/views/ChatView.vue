@@ -375,8 +375,10 @@ export default {
       this.friendsLoading = true
       try {
         const data = await apiGet('friends')
+        console.log('ChatView Friends API response:', data)
         if (data.status === 'success') {
           this.friends = data.friends
+          console.log('Friends with avatar_url:', this.friends.map(f => ({ name: f.user_name, avatar: f.avatar_url })))
           // 更新在線狀態映射
           this.friends.forEach(f => {
             this.friendsOnlineStatus[f.user_id] = f.is_online

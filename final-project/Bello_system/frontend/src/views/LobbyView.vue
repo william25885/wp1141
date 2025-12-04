@@ -211,8 +211,10 @@ export default {
       this.friendsLoading = true
       try {
         const data = await apiGet('friends')
+        console.log('Friends API response:', data)
         if (data.status === 'success') {
           this.friends = data.friends
+          console.log('Friends data with avatar:', this.friends.map(f => ({ name: f.user_name, avatar: f.avatar_url })))
         }
         
         const requestsData = await apiGet('friends/requests')
