@@ -62,14 +62,14 @@
               <td><span class="badge bg-primary">{{ meeting.message_count }}</span></td>
               <td>
                 <span 
-                  class="badge"
+                  class="status-badge"
                   :class="{
-                    'bg-success': meeting.status === '進行中',
-                    'bg-secondary': meeting.status === '已完成',
-                    'bg-danger': meeting.status === '已取消'
+                    'status-ongoing': meeting.status === '進行中' || meeting.status === 'Ongoing',
+                    'status-finished': meeting.status === '已完成' || meeting.status === 'Finished',
+                    'status-canceled': meeting.status === '已取消' || meeting.status === 'Canceled'
                   }"
                 >
-                  {{ meeting.status }}
+                  {{ meeting.status === 'Ongoing' ? '進行中' : meeting.status === 'Finished' ? '已完成' : meeting.status === 'Canceled' ? '已取消' : meeting.status }}
                 </span>
               </td>
               <td>
@@ -344,5 +344,30 @@ export default {
   padding: 20px;
   background-color: #f8f9fa;
   border-radius: 4px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #212529;
+  background-color: #e9ecef;
+}
+
+.status-ongoing {
+  background-color: #d1e7dd;
+  color: #212529;
+}
+
+.status-finished {
+  background-color: #e2e3e5;
+  color: #212529;
+}
+
+.status-canceled {
+  background-color: #f8d7da;
+  color: #212529;
 }
 </style>
