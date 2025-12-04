@@ -4,6 +4,43 @@ from jwt_utils import require_auth
 
 update_profile = Blueprint("update_profile", __name__)
 
+@update_profile.route('/update-avatar', methods=['POST'])
+@require_auth
+def update_user_avatar():
+    """更新用戶頭像"""
+    try:
+        data = request.get_json()
+        user_id = request.current_user['user_id']
+        avatar_data = data.get('avatar_data')
+        
+        if not avatar_data:
+            return jsonify({
+                'status': 'error',
+                'message': '缺少頭像資料'
+            }), 400
+        
+        db = DatabaseManager()
+        success = db.update_user_avatar(user_id, avatar_data)
+        
+        if success:
+            return jsonify({
+                'status': 'success',
+                'message': '頭像更新成功',
+                'avatar_url': avatar_data
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': '頭像更新失敗'
+            }), 500
+            
+    except Exception as e:
+        print(f"Error updating avatar: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 @update_profile.route('/update-profile', methods=['POST'])
 @require_auth
 def update_user_profile():

@@ -364,6 +364,25 @@ class DatabaseManager:
             self.conn.rollback()
             return False
 
+    def update_user_avatar(self, user_id, avatar_data):
+        """更新用戶頭像"""
+        try:
+            self._ensure_connection()
+            
+            update_query = """
+                UPDATE "USER" 
+                SET "Avatar_url" = %s
+                WHERE "User_id" = %s
+            """
+            self.execute_query(update_query, (avatar_data, user_id))
+            self.conn.commit()
+            return True
+            
+        except Exception as e:
+            print(f"Error updating user avatar: {str(e)}")
+            self.conn.rollback()
+            return False
+
     def update_user_detail(self, field, value, user_id):
         try:
             cursor = self.conn.cursor()

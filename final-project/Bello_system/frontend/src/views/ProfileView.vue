@@ -2,6 +2,65 @@
   <div class="profile-container">
     <h2 class="mb-4">編輯個人資料</h2>
     
+    <!-- 頭像區塊 -->
+    <div class="avatar-section mb-4">
+      <div class="avatar-wrapper" @click="toggleAvatarMenu">
+        <div class="avatar-circle-large" v-if="!userData.avatar_url">
+          {{ getAvatarText() }}
+        </div>
+        <img 
+          v-else 
+          :src="userData.avatar_url" 
+          alt="頭像" 
+          class="avatar-img-large"
+        >
+        <div class="avatar-overlay">
+          <span class="overlay-icon">📷</span>
+        </div>
+      </div>
+      <div class="user-display-name mt-3">
+        {{ userData.user_name || '用戶' }}
+      </div>
+      <div class="user-account text-muted">
+        @{{ userData.account || '' }}
+      </div>
+      
+      <!-- 頭像選單 -->
+      <div v-if="showAvatarMenu" class="avatar-menu">
+        <div class="avatar-menu-item" @click="viewAvatar">
+          <span class="menu-icon">🔍</span> 查看大頭貼
+        </div>
+        <div class="avatar-menu-item" @click="triggerAvatarUpload">
+          <span class="menu-icon">✏️</span> 更改大頭貼
+        </div>
+      </div>
+      
+      <!-- 隱藏的文件上傳 -->
+      <input 
+        type="file" 
+        ref="avatarInput" 
+        @change="handleAvatarUpload" 
+        accept="image/*" 
+        style="display: none;"
+      >
+    </div>
+    
+    <!-- 查看大頭貼彈窗 -->
+    <div v-if="showAvatarModal" class="avatar-modal" @click.self="closeAvatarModal">
+      <div class="avatar-modal-content">
+        <button class="btn-close-modal" @click="closeAvatarModal">✕</button>
+        <div class="avatar-view-large" v-if="!userData.avatar_url">
+          {{ getAvatarText() }}
+        </div>
+        <img 
+          v-else 
+          :src="userData.avatar_url" 
+          alt="頭像" 
+          class="avatar-view-img"
+        >
+      </div>
+    </div>
+
     <!-- 基本資料區塊 -->
     <div class="card mb-4">
       <div class="card-body">
@@ -147,6 +206,9 @@ export default {
     return {
       userData: {},
       profileData: {},
+      showAvatarMenu: false,
+      showAvatarModal: false,
+      uploadingAvatar: false,
       optionFields: {
         Star_sign: {
           name: '星座',
@@ -203,6 +265,94 @@ export default {
       const date = new Date(dateStr);
       return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
     },
+    
+    // ======= 頭像相關方法 =======
+    getAvatarText() {
+      // 優先使用暱稱，其次是姓名
+      const name = this.userData.user_nickname || this.userData.user_name || '用戶';
+      // 取前兩個字
+      return name.substring(0, 2);
+    },
+    
+    toggleAvatarMenu() {
+      this.showAvatarMenu = !this.showAvatarMenu;
+    },
+    
+    viewAvatar() {
+      this.showAvatarMenu = false;
+      this.showAvatarModal = true;
+    },
+    
+    closeAvatarModal() {
+      this.showAvatarModal = false;
+    },
+    
+    triggerAvatarUpload() {
+      this.showAvatarMenu = false;
+      this.$refs.avatarInput.click();
+    },
+    
+    async handleAvatarUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      // 檢查文件類型
+      if (!file.type.startsWith('image/')) {
+        alert('請選擇圖片文件');
+        return;
+      }
+      
+      // 檢查文件大小（限制 5MB）
+      if (file.size > 5 * 1024 * 1024) {
+        alert('圖片大小不能超過 5MB');
+        return;
+      }
+      
+      this.uploadingAvatar = true;
+      
+      try {
+        // 將圖片轉換為 base64
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          const base64Data = e.target.result;
+          
+          // 上傳到後端
+          const data = await apiPost('update-avatar', {
+            avatar_data: base64Data
+          });
+          
+          if (data.status === 'success') {
+            this.userData.avatar_url = data.avatar_url || base64Data;
+            alert('頭像更新成功！');
+          } else {
+            alert(data.message || '頭像更新失敗');
+          }
+          
+          this.uploadingAvatar = false;
+        };
+        reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('Error uploading avatar:', error);
+        alert('頭像上傳失敗');
+        this.uploadingAvatar = false;
+      }
+      
+      // 清空 input，允許再次選擇相同文件
+      event.target.value = '';
+    },
+    
+    // 點擊頁面其他地方關閉選單
+    handleClickOutside(event) {
+      if (this.showAvatarMenu) {
+        const avatarWrapper = this.$el.querySelector('.avatar-wrapper');
+        const avatarMenu = this.$el.querySelector('.avatar-menu');
+        if (avatarWrapper && !avatarWrapper.contains(event.target) && 
+            avatarMenu && !avatarMenu.contains(event.target)) {
+          this.showAvatarMenu = false;
+        }
+      }
+    },
+    
     async fetchUserData() {
       try {
         const user = getUser();
@@ -406,6 +556,12 @@ export default {
   },
   created() {
     this.fetchUserData();
+  },
+  mounted() {
+    document.addEventListener('click', this.handleClickOutside);
+  },
+  beforeUnmount() {
+    document.removeEventListener('click', this.handleClickOutside);
   }
 }
 </script>
@@ -417,6 +573,196 @@ export default {
   padding: 20px;
 }
 
+/* ======= 頭像區塊樣式 ======= */
+.avatar-section {
+  text-align: center;
+  position: relative;
+  padding: 30px 0;
+  background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.avatar-wrapper {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.avatar-wrapper:hover {
+  transform: scale(1.05);
+}
+
+.avatar-wrapper:hover .avatar-overlay {
+  opacity: 1;
+}
+
+.avatar-circle-large {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 42px;
+  border: 4px solid #fff;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.avatar-img-large {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #fff;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.avatar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.overlay-icon {
+  font-size: 28px;
+}
+
+.user-display-name {
+  color: #fff;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.user-account {
+  color: rgba(255,255,255,0.7);
+  font-size: 0.9rem;
+}
+
+/* 頭像選單 */
+.avatar-menu {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  overflow: hidden;
+  z-index: 100;
+  min-width: 160px;
+  margin-top: 10px;
+}
+
+.avatar-menu::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid #fff;
+}
+
+.avatar-menu-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background 0.2s ease;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.avatar-menu-item:hover {
+  background: #f0f4f8;
+}
+
+.avatar-menu-item:not(:last-child) {
+  border-bottom: 1px solid #eee;
+}
+
+.menu-icon {
+  margin-right: 10px;
+  font-size: 1.1rem;
+}
+
+/* 查看大頭貼彈窗 */
+.avatar-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.avatar-modal-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.btn-close-modal {
+  position: absolute;
+  top: -40px;
+  right: -10px;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 5px 10px;
+  transition: transform 0.2s;
+}
+
+.btn-close-modal:hover {
+  transform: scale(1.2);
+}
+
+.avatar-view-large {
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 100px;
+  border: 6px solid #fff;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+}
+
+.avatar-view-img {
+  max-width: 400px;
+  max-height: 400px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 6px solid #fff;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+}
+
+/* ======= 卡片樣式 ======= */
 .card {
   border-radius: 10px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
